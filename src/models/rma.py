@@ -142,7 +142,9 @@ class OracleQModel(TorchModelV2, nn.Module):
             self, obs_space, action_space, num_outputs, model_config, name
         )
         nn.Module.__init__(self)
-
+        activation = model_config["fcnet_activation"]
+        a_space, e_space, x_space = self.unpack_obs_space(obs_space)
+        
         # Define the encoder
         encoder_hiddens = model_config["encoder_hiddens"]
         encoder_layers = []
