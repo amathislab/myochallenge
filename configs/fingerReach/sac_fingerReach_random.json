@@ -1,0 +1,67 @@
+{
+    "env_name": "MyoFingerReachRandom",
+    "env_config": {
+        "sigma": 0,
+        "render": false
+    },
+    "num_trainer_workers": 18,
+    "policies_to_train": {
+        "policy": true
+    },
+    "policy_classes": {
+        "policy": "sac"
+    },
+    "policy_configs": {
+        "policy": {
+            "Q_model": {
+                "fcnet_activation": "relu",
+                "fcnet_hiddens": [
+                    256,
+                    256
+                ]
+            },
+            "policy_model": {
+                "fcnet_activation": "relu",
+                "fcnet_hiddens": [
+                    256,
+                    256
+                ]
+            },
+            "normalize_actions": true,
+            "no_done_at_end": false,
+            "n_step": 1,
+            "timesteps_per_iteration": 10000,
+            "prioritized_replay": true,
+            "buffer_size": 100000,
+            "optimization": {
+                "actor_learning_rate": 3e-4,
+                "critic_learning_rate": 3e-4,
+                "entropy_learning_rate": 3e-4
+            },
+            "grad_clip": null,
+            "learning_starts": 10000,
+            "target_network_update_freq": 0,
+            "worker_side_prioritization": false,
+            "min_iter_time_s": 1
+        }
+    },
+    "agent_policy_dict": {
+        "agent": "policy"
+    },
+    "gamma": 0.995,
+    "rollout_fragment_length": 1,
+    "train_batch_size": 256,
+    "lr": 1e-4,
+    "num_gpus": 0,
+    "extra_trainer_params": {
+        "framework": "torch",
+        "seed": 0
+    },
+    "callbacks": "MyoInfoCallbacks",    
+    "trainer_class": "sac",
+    "episodes_total": 1e7,
+    "logdir": "output",
+    "trial_name": "sac_fingerReach_random",
+    "checkpoint_freq": 100,
+    "restore_checkpoint_path": null
+}
