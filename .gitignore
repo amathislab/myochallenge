@@ -59,8 +59,8 @@ coverage.xml
 .pytest_cache/
 
 #Tensorboard logs
-/static_goal_ppo
-/original_ppo
+.static_goal_ppo/
+.original_ppo/
 
 # Translations
 *.mo
