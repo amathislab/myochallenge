@@ -6,6 +6,13 @@ __pycache__/
 # C extensions
 *.so
 
+#models
+static_goal_ppo.zip
+original_ppo.zip
+
+#drafts
+draft.ipynb_checkpoints
+
 # Distribution / packaging
 .Python
 build/
