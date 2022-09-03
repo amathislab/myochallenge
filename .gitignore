@@ -58,6 +58,10 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 
+#Tensorboard logs
+/static_goal_ppo
+/original_ppo
+
 # Translations
 *.mo
 *.pot
