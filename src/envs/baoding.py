@@ -1,5 +1,6 @@
-import numpy as np
 import collections
+
+import numpy as np
 from myosuite.envs.myo.myochallenge.baoding_v1 import BaodingEnvV1
 
 
@@ -76,3 +77,47 @@ class CustomBaodingEnv(BaodingEnvV1):
         )
 
         return rwd_dict
+
+    def reset(self, reset_pose=None, reset_vel=None, reset_goal=None, time_period=None):
+
+        # MODIFICATION: randomnize starting target position along the cycle
+        random_phase = np.random.uniform(low=-np.pi, high=np.pi)
+        # random_phase = 0
+        self.ball_1_starting_angle = 3.0 * np.pi / 4.0 + random_phase
+        self.ball_2_starting_angle = -1.0 * np.pi / 4.0 + random_phase
+
+        # reset counters
+        self.counter = 0
+        self.x_radius = self.np_random.uniform(
+            low=self.goal_xrange[0], high=self.goal_xrange[1]
+        )
+        self.y_radius = self.np_random.uniform(
+            low=self.goal_yrange[0], high=self.goal_yrange[1]
+        )
+        # reset goal
+        if time_period == None:
+            time_period = self.np_random.uniform(
+                low=self.goal_time_period[0], high=self.goal_time_period[1]
+            )
+        self.goal = (
+            self.create_goal_trajectory(time_step=self.dt, time_period=time_period)
+            if reset_goal is None
+            else reset_goal.copy()
+        )
+
+        # reset scene (MODIFIED from base class MujocoEnv)
+        qpos = self.init_qpos.copy() if reset_pose is None else reset_pose
+        qvel = self.init_qvel.copy() if reset_vel is None else reset_vel
+
+        self.robot.reset(qpos, qvel)
+
+        # MODIFICATION: start balls in target positions
+        self.step(np.zeros(39))
+        qpos[23] = self.get_obs().copy()[35]
+        qpos[24] = self.get_obs().copy()[36]
+        qpos[30] = self.get_obs().copy()[38]
+        qpos[31] = self.get_obs().copy()[39]
+
+        self.set_state(qpos, qvel)
+
+        return self.get_obs()
