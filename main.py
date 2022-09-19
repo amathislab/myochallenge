@@ -16,7 +16,7 @@ FIRST_TASK = True
 # Path to normalized Vectorized environment (if not first task)
 PATH_TO_NORMALIZED_ENV = ""
 
-# Path to normalized pretrained network (if not first task)
+# Path to pretrained network (if not first task)
 PATH_TO_PRETRAINED_NET = ""
 
 # Tensorboard log (will save best model during evaluation)
