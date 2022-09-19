@@ -93,7 +93,7 @@ if FIRST_TASK:
         ),
     )
 else:
-    model = RecurrentPPO.load("lstm_ppo_rsi_p8_to_original_p7/best_model.zip", env=envs)
+    model = RecurrentPPO.load(PATH_TO_PRETRAINED_NET, env=envs)
 
 # Train and save model
 model.learn(total_timesteps=10000000, callback=eval_callback)
