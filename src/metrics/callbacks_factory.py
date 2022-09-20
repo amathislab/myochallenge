@@ -1,6 +1,6 @@
 from ray.rllib.agents.callbacks import DefaultCallbacks
-from metrics.callbacks import FullInfoCallbacks
-from metrics.callbacks import MyoInfoCallbacks
+from src.metrics.callbacks import FullInfoCallbacks
+from src.metrics.callbacks import MyoInfoCallbacks
 
 class CallbacksFactory:
     """Static factory to get a callback class by name. Returns the default

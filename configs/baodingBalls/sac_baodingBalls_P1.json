@@ -62,7 +62,7 @@
     "rollout_fragment_length": 1,
     "train_batch_size": 256,
     "lr": 1e-4,
-    "num_gpus": 1,
+    "num_gpus": 0,
     "extra_trainer_params": {
         "framework": "torch",
         "seed": 0
