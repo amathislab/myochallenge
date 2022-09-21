@@ -1,5 +1,7 @@
+import os
 import numpy as np
 import torch.nn as nn
+from datetime import datetime
 from sb3_contrib import RecurrentPPO
 from stable_baselines3.common.callbacks import EvalCallback
 from stable_baselines3.common.monitor import Monitor
@@ -11,16 +13,17 @@ from src.envs.environment_factory import EnvironmentFactory
 env_name = "CustomMyoBaodingBallsP1"
 
 # whether this is the first task of the curriculum (True) or it is loading a previous task (False)
-FIRST_TASK = True
+FIRST_TASK = False
 
 # Path to normalized Vectorized environment (if not first task)
-PATH_TO_NORMALIZED_ENV = ""  # "trained_models/normalized_env_original"
+PATH_TO_NORMALIZED_ENV = "trained_models/normalized_env_original"  # "trained_models/normalized_env_original"
 
 # Path to pretrained network (if not first task)
-PATH_TO_PRETRAINED_NET = ""  # "trained_models/best_model.zip"
+PATH_TO_PRETRAINED_NET = "output/training/best_model.zip"  # "trained_models/best_model.zip"
 
 # Tensorboard log (will save best model during evaluation)
-TENSORBOARD_LOG = "output/training"
+now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+TENSORBOARD_LOG = os.path.join("output", "training", now)
 
 
 # Reward structure and task parameters:
@@ -34,8 +37,9 @@ config = {
         "done": 0,
         "sparse": 0,
     },
-    "goal_time_period": [1e6, 1e6],
-    "task": "random"
+    "goal_time_period": [20, 20],
+    "task": "random",
+    "enable_rsi": True
 }
 
 
