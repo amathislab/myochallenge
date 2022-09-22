@@ -16,10 +16,10 @@ env_name = "CustomMyoBaodingBallsP1"
 FIRST_TASK = False
 
 # Path to normalized Vectorized environment (if not first task)
-PATH_TO_NORMALIZED_ENV = "trained_models/normalized_env_original"  # "trained_models/normalized_env_original"
+PATH_TO_NORMALIZED_ENV = "trained_models/normalized_env_original"  # "trained_models/normalized_env_original"  # "trained_models/normalized_env_original"
 
 # Path to pretrained network (if not first task)
-PATH_TO_PRETRAINED_NET = "output/training/best_model.zip"  # "trained_models/best_model.zip"
+PATH_TO_PRETRAINED_NET = "output/training/2022-09-21_15-58-41/best_model.zip"  # "output/training/best_model.zip"  # "trained_models/best_model.zip"
 
 # Tensorboard log (will save best model during evaluation)
 now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -39,7 +39,7 @@ config = {
     },
     "goal_time_period": [20, 20],
     "task": "random",
-    "enable_rsi": True
+    "enable_rsi": True,
 }
 
 
@@ -54,6 +54,7 @@ def make_parallel_envs(env_name, env_config, num_env, start_index=0):
         return _thunk
 
     return SubprocVecEnv([make_env(i + start_index) for i in range(num_env)])
+
 
 if __name__ == "__main__":
     # Create vectorized environments:
@@ -75,7 +76,6 @@ if __name__ == "__main__":
         render=False,
         n_eval_episodes=20,
     )
-
 
     # Create model (hyperparameters from RL Zoo HalfCheetak)
     if FIRST_TASK:
@@ -103,7 +103,6 @@ if __name__ == "__main__":
     # Train and save model
     model.learn(total_timesteps=10000000, callback=eval_callback)
     model.save("model_name")
-
 
     # EVALUATE
     eval_model = model
