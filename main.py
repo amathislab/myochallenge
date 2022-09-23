@@ -1,14 +1,17 @@
 import os
 import numpy as np
 import torch.nn as nn
+import json
+import shutil
 from datetime import datetime
 from sb3_contrib import RecurrentPPO
 from stable_baselines3.common.callbacks import EvalCallback
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import VecNormalize
 from stable_baselines3.common.vec_env.subproc_vec_env import SubprocVecEnv
-
 from src.envs.environment_factory import EnvironmentFactory
+from src.metrics.sb_callbacks import EnvDumpCallback
+
 
 env_name = "CustomMyoBaodingBallsP1"
 
@@ -16,10 +19,10 @@ env_name = "CustomMyoBaodingBallsP1"
 FIRST_TASK = False
 
 # Path to normalized Vectorized environment (if not first task)
-PATH_TO_NORMALIZED_ENV = "trained_models/normalized_env_original"  # "trained_models/normalized_env_original"  # "trained_models/normalized_env_original"
+PATH_TO_NORMALIZED_ENV = "output/training/2022-09-23_12-16-54/training_env.pkl"  # "trained_models/normalized_env_original"
 
 # Path to pretrained network (if not first task)
-PATH_TO_PRETRAINED_NET = "output/training/2022-09-21_15-58-41/best_model.zip"  # "output/training/best_model.zip"  # "trained_models/best_model.zip"
+PATH_TO_PRETRAINED_NET = "output/training/2022-09-23_12-16-54/best_model.zip"  # "trained_models/best_model.zip"
 
 # Tensorboard log (will save best model during evaluation)
 now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -33,15 +36,14 @@ config = {
         "pos_dist_2": 1,
         "act_reg": 0,
         "alive": 1,
-        "solved": 5,
+        "solved": 1,
         "done": 0,
         "sparse": 0,
     },
-    "goal_time_period": [20, 20],
+    "goal_time_period": [1e6, 1e6],
     "task": "random",
     "enable_rsi": True,
 }
-
 
 # Function that creates and monitors vectorized environments:
 def make_parallel_envs(env_name, env_config, num_env, start_index=0):
@@ -57,6 +59,12 @@ def make_parallel_envs(env_name, env_config, num_env, start_index=0):
 
 
 if __name__ == "__main__":
+    os.makedirs(TENSORBOARD_LOG, exist_ok=True)
+    with open(os.path.join(TENSORBOARD_LOG, "config.json"), "w") as file:
+        json.dump(config, file)
+    shutil.copy(os.path.abspath(__file__), TENSORBOARD_LOG)
+
+        
     # Create vectorized environments:
     envs = make_parallel_envs(env_name, config, num_env=16)
 
@@ -67,11 +75,13 @@ if __name__ == "__main__":
         envs = VecNormalize.load(PATH_TO_NORMALIZED_ENV, envs)
 
     # Create callback to evaluate
+    env_dump_callback = EnvDumpCallback(TENSORBOARD_LOG, verbose=0)
     eval_callback = EvalCallback(
         envs,
+        callback_on_new_best=env_dump_callback,
         best_model_save_path=TENSORBOARD_LOG,
         log_path=TENSORBOARD_LOG,
-        eval_freq=10000,
+        eval_freq=1000,
         deterministic=True,
         render=False,
         n_eval_episodes=20,
@@ -103,33 +113,3 @@ if __name__ == "__main__":
     # Train and save model
     model.learn(total_timesteps=10000000, callback=eval_callback)
     model.save("model_name")
-
-    # EVALUATE
-    eval_model = model
-    eval_env = EnvironmentFactory.register(env_name, **config)
-
-    # Enjoy trained agent
-    perfs, lens, lstm_states, cum_rew, step = [], [], None, 0, 0
-    obs = eval_env.reset()
-    episode_starts = np.ones((1,), dtype=bool)
-    for i in range(5000):
-        eval_env.sim.render(mode="window")
-        action, lstm_states = eval_model.predict(
-            envs.normalize_obs(obs),
-            state=lstm_states,
-            episode_start=episode_starts,
-            deterministic=True,
-        )
-        obs, rewards, dones, info = eval_env.step(action)
-        episode_starts = dones
-        cum_rew += rewards
-        step += 1
-        if dones:
-            episode_starts = np.ones((1,), dtype=bool)
-            lstm_states = None
-            obs = eval_env.reset()
-            lens.append(step)
-            perfs.append(cum_rew)
-            cum_rew, step = 0, 0
-
-    print(("Average len:", np.mean(lens), "     ", "Average rew:", np.mean(perfs)))
