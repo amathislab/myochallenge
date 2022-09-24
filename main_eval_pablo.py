@@ -12,12 +12,12 @@ env_name = "CustomMyoBaodingBallsP1"
 
 # Path to normalized Vectorized environment (if not first task)
 PATH_TO_NORMALIZED_ENV = (
-    "/Users/pablotano/Downloads/myochallenge-2/trained_models/normalized_env_original"
+    "trained_models/normalized_env_original"
 )
 
 # Path to pretrained network (if not first task)
 PATH_TO_PRETRAINED_NET = (
-    "/Users/pablotano/Downloads/myochallenge-2/trained_models/best_model.zip"
+    "trained_models/best_model.zip"
 )
 
 
