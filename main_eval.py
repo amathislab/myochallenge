@@ -10,26 +10,28 @@ from src.envs.environment_factory import EnvironmentFactory
 env_name = "CustomMyoBaodingBallsP1"
 
 # Path to normalized Vectorized environment (if not first task)
-PATH_TO_NORMALIZED_ENV = "output/training/2022-09-23_12-16-54/training_env.pkl"  # "trained_models/normalized_env_original"
+# PATH_TO_NORMALIZED_ENV = "output/training/2022-09-23_12-16-54/training_env.pkl"  # "trained_models/normalized_env_original"
+PATH_TO_NORMALIZED_ENV = "trained_models/normalized_env_original"  # "trained_models/normalized_env_original"
+
 
 # Path to pretrained network (if not first task)
-PATH_TO_PRETRAINED_NET = "output/training/2022-09-23_12-16-54/best_model.zip"  # "trained_models/best_model.zip"
-
+# PATH_TO_PRETRAINED_NET = "output/training/2022-09-23_12-16-54/best_model.zip"  # "trained_models/best_model.zip"
+PATH_TO_PRETRAINED_NET = "trained_models/best_model.zip"  # "trained_models/best_model.zip"
 
 # Reward structure and task parameters:
 config = {
     "weighted_reward_keys": {
-        "pos_dist_1": 1,
-        "pos_dist_2": 1,
+        "pos_dist_1": 0,
+        "pos_dist_2": 0,
         "act_reg": 0,
-        "alive": 1,
-        "solved": 1,
+        "alive": 0,
+        "solved": 5,
         "done": 0,
         "sparse": 0,
     },
-    "goal_time_period": [1e6, 1e6],
+    "goal_time_period": [5, 5],
     "task": "random",
-    "enable_rsi": True
+    "enable_rsi": False
 }
 
 
@@ -52,7 +54,7 @@ if __name__ == "__main__":
     envs = VecNormalize.load(PATH_TO_NORMALIZED_ENV, envs)
 
     # Create model (hyperparameters from RL Zoo HalfCheetak)
-    model = RecurrentPPO.load(PATH_TO_PRETRAINED_NET)
+    model = RecurrentPPO.load(PATH_TO_PRETRAINED_NET, env=envs)
 
     # EVALUATE
     eval_model = model
@@ -67,17 +69,18 @@ if __name__ == "__main__":
         cum_rew = 0
         step = 0
         obs = eval_env.reset()
-        # episode_starts = np.ones((1,), dtype=bool)
+        episode_starts = np.ones((1,), dtype=bool)
         done = False
         while not done:
             eval_env.sim.render(mode="window")
             action, lstm_states = eval_model.predict(
                 envs.normalize_obs(obs),
                 state=lstm_states,
-                # episode_start=episode_starts,
+                episode_start=episode_starts,
                 deterministic=True,
             )
             obs, rewards, done, info = eval_env.step(action)
+            episode_starts = done
             cum_rew += rewards
             step += 1
         lens.append(step)
