@@ -81,124 +81,124 @@ class CustomBaodingEnv(BaodingEnvV1):
 
         return rwd_dict
 
-    # def reset(self, reset_pose=None, reset_vel=None, reset_goal=None, time_period=None):
+    def reset(self, reset_pose=None, reset_vel=None, reset_goal=None, time_period=None):
         
-    #     if self.rsi:
-    #         # MODIFICATION: randomnize starting target position along the cycle
-    #         random_phase = np.random.uniform(low=-np.pi, high=np.pi)
-    #     else:
-    #         random_phase = 0
-    #     self.ball_1_starting_angle = 3.0 * np.pi / 4.0 + random_phase
-    #     self.ball_2_starting_angle = -1.0 * np.pi / 4.0 + random_phase
+        if self.rsi:
+            # MODIFICATION: randomize starting target position along the cycle
+            random_phase = np.random.uniform(low=-np.pi, high=np.pi)
+        else:
+            random_phase = 0
+        self.ball_1_starting_angle = 3.0 * np.pi / 4.0 + random_phase
+        self.ball_2_starting_angle = -1.0 * np.pi / 4.0 + random_phase
 
-    #     # reset counters
-    #     self.counter = 0
-    #     self.x_radius = self.np_random.uniform(
-    #         low=self.goal_xrange[0], high=self.goal_xrange[1]
-    #     )
-    #     self.y_radius = self.np_random.uniform(
-    #         low=self.goal_yrange[0], high=self.goal_yrange[1]
-    #     )
-    #     # reset goal
-    #     if time_period == None:
-    #         time_period = self.np_random.uniform(
-    #             low=self.goal_time_period[0], high=self.goal_time_period[1]
-    #         )
-    #     self.goal = (
-    #         self.create_goal_trajectory(time_step=self.dt, time_period=time_period)
-    #         if reset_goal is None
-    #         else reset_goal.copy()
-    #     )
+        # reset counters
+        self.counter = 0
+        self.x_radius = self.np_random.uniform(
+            low=self.goal_xrange[0], high=self.goal_xrange[1]
+        )
+        self.y_radius = self.np_random.uniform(
+            low=self.goal_yrange[0], high=self.goal_yrange[1]
+        )
+        # reset goal
+        if time_period == None:
+            time_period = self.np_random.uniform(
+                low=self.goal_time_period[0], high=self.goal_time_period[1]
+            )
+        self.goal = (
+            self.create_goal_trajectory(time_step=self.dt, time_period=time_period)
+            if reset_goal is None
+            else reset_goal.copy()
+        )
 
-    #     # reset scene (MODIFIED from base class MujocoEnv)
-    #     qpos = self.init_qpos.copy() if reset_pose is None else reset_pose
-    #     qvel = self.init_qvel.copy() if reset_vel is None else reset_vel
+        # reset scene (MODIFIED from base class MujocoEnv)
+        qpos = self.init_qpos.copy() if reset_pose is None else reset_pose
+        qvel = self.init_qvel.copy() if reset_vel is None else reset_vel
 
-    #     self.robot.reset(qpos, qvel)
+        self.robot.reset(qpos, qvel)
 
-    #     # MODIFICATION: start balls at the same position as targets
-    #     self.step(np.zeros(39))
-    #     qpos[23] = self.get_obs().copy()[35]
-    #     qpos[24] = self.get_obs().copy()[36]
-    #     qpos[30] = self.get_obs().copy()[38]
-    #     qpos[31] = self.get_obs().copy()[39]
+        # MODIFICATION: start balls at the same position as targets
+        self.step(np.zeros(39))
+        qpos[23] = self.get_obs().copy()[35]
+        qpos[24] = self.get_obs().copy()[36]
+        qpos[30] = self.get_obs().copy()[38]
+        qpos[31] = self.get_obs().copy()[39]
 
-    #     self.set_state(qpos, qvel)
+        self.set_state(qpos, qvel)
 
-    #     return self.get_obs()
+        return self.get_obs()
 
-    # def _setup(
-    #     self,
-    #     frame_skip: int = 10,
-    #     drop_th=1.25,  # drop height threshold
-    #     proximity_th=0.015,  # object-target proximity threshold
-    #     goal_time_period=(5, 5),  # target rotation time period
-    #     goal_xrange=(0.025, 0.025),  # target rotation: x radius (0.03)
-    #     goal_yrange=(0.028, 0.028),  # target rotation: x radius (0.02 * 1.5 * 1.2)
-    #     obs_keys: list = BaodingEnvV1.DEFAULT_OBS_KEYS,
-    #     weighted_reward_keys: list = DEFAULT_RWD_KEYS_AND_WEIGHTS,
-    #     task=None,
-    #     enable_rsi=False,  # random state init
-    #     **kwargs
-    # ):
+    def _setup(
+        self,
+        frame_skip: int = 10,
+        drop_th=1.25,  # drop height threshold
+        proximity_th=0.015,  # object-target proximity threshold
+        goal_time_period=(5, 5),  # target rotation time period
+        goal_xrange=(0.025, 0.025),  # target rotation: x radius (0.03)
+        goal_yrange=(0.028, 0.028),  # target rotation: x radius (0.02 * 1.5 * 1.2)
+        obs_keys: list = BaodingEnvV1.DEFAULT_OBS_KEYS,
+        weighted_reward_keys: list = DEFAULT_RWD_KEYS_AND_WEIGHTS,
+        task=None,
+        enable_rsi=False,  # random state init
+        **kwargs
+    ):
 
-    #     # user parameters
-    #     if task is None:
-    #         self.which_task = Task(WHICH_TASK)
-    #     else:
-    #         if task == "cw":
-    #             self.which_task = Task(Task.BAODING_CW)
-    #         elif task == "ccw":
-    #             self.which_task = Task(Task.BAODING_CCW)
-    #         elif task == "random":
-    #             self.which_task = Task(random.choice(list(Task)))
-    #         else:
-    #             raise ValueError("Unknown task for baoding: ", task)
-    #     self.rsi = enable_rsi
-    #     self.drop_th = drop_th
-    #     self.proximity_th = proximity_th
-    #     self.goal_time_period = goal_time_period
-    #     self.goal_xrange = goal_xrange
-    #     self.goal_yrange = goal_yrange
+        # user parameters
+        if task is None:
+            self.which_task = Task(WHICH_TASK)
+        else:
+            if task == "cw":
+                self.which_task = Task(Task.BAODING_CW)
+            elif task == "ccw":
+                self.which_task = Task(Task.BAODING_CCW)
+            elif task == "random":
+                self.which_task = Task(random.choice(list(Task)))
+            else:
+                raise ValueError("Unknown task for baoding: ", task)
+        self.rsi = enable_rsi
+        self.drop_th = drop_th
+        self.proximity_th = proximity_th
+        self.goal_time_period = goal_time_period
+        self.goal_xrange = goal_xrange
+        self.goal_yrange = goal_yrange
 
-    #     # balls start at these angles
-    #     #   1= yellow = top right
-    #     #   2= pink = bottom left
-    #     self.ball_1_starting_angle = 3.0 * np.pi / 4.0
-    #     self.ball_2_starting_angle = -1.0 * np.pi / 4.0
+        # balls start at these angles
+        #   1= yellow = top right
+        #   2= pink = bottom left
+        self.ball_1_starting_angle = 3.0 * np.pi / 4.0
+        self.ball_2_starting_angle = -1.0 * np.pi / 4.0
 
-    #     # init desired trajectory, for rotations
-    #     self.center_pos = [-0.0125, -0.07]  # [-.0020, -.0522]
-    #     self.x_radius = self.np_random.uniform(
-    #         low=self.goal_xrange[0], high=self.goal_xrange[1]
-    #     )
-    #     self.y_radius = self.np_random.uniform(
-    #         low=self.goal_yrange[0], high=self.goal_yrange[1]
-    #     )
+        # init desired trajectory, for rotations
+        self.center_pos = [-0.0125, -0.07]  # [-.0020, -.0522]
+        self.x_radius = self.np_random.uniform(
+            low=self.goal_xrange[0], high=self.goal_xrange[1]
+        )
+        self.y_radius = self.np_random.uniform(
+            low=self.goal_yrange[0], high=self.goal_yrange[1]
+        )
 
-    #     self.counter = 0
-    #     self.goal = self.create_goal_trajectory(
-    #         time_step=frame_skip * self.sim.model.opt.timestep, time_period=6
-    #     )
+        self.counter = 0
+        self.goal = self.create_goal_trajectory(
+            time_step=frame_skip * self.sim.model.opt.timestep, time_period=6
+        )
 
-    #     # init target and body sites
-    #     self.object1_sid = self.sim.model.site_name2id("ball1_site")
-    #     self.object2_sid = self.sim.model.site_name2id("ball2_site")
-    #     self.object1_gid = self.sim.model.geom_name2id("ball1")
-    #     self.object2_gid = self.sim.model.geom_name2id("ball2")
-    #     self.target1_sid = self.sim.model.site_name2id("target1_site")
-    #     self.target2_sid = self.sim.model.site_name2id("target2_site")
-    #     self.sim.model.site_group[self.target1_sid] = 2
-    #     self.sim.model.site_group[self.target2_sid] = 2
+        # init target and body sites
+        self.object1_sid = self.sim.model.site_name2id("ball1_site")
+        self.object2_sid = self.sim.model.site_name2id("ball2_site")
+        self.object1_gid = self.sim.model.geom_name2id("ball1")
+        self.object2_gid = self.sim.model.geom_name2id("ball2")
+        self.target1_sid = self.sim.model.site_name2id("target1_site")
+        self.target2_sid = self.sim.model.site_name2id("target2_site")
+        self.sim.model.site_group[self.target1_sid] = 2
+        self.sim.model.site_group[self.target2_sid] = 2
 
-    #     BaseV0._setup(
-    #         self,
-    #         obs_keys=obs_keys,
-    #         weighted_reward_keys=weighted_reward_keys,
-    #         frame_skip=frame_skip,
-    #         **kwargs,
-    #     )
+        BaseV0._setup(
+            self,
+            obs_keys=obs_keys,
+            weighted_reward_keys=weighted_reward_keys,
+            frame_skip=frame_skip,
+            **kwargs,
+        )
 
-    #     # reset position
-    #     self.init_qpos[:-14] *= 0  # Use fully open as init pos
-    #     self.init_qpos[0] = -1.57  # Palm up
+        # reset position
+        self.init_qpos[:-14] *= 0  # Use fully open as init pos
+        self.init_qpos[0] = -1.57  # Palm up
