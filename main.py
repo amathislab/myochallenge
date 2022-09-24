@@ -19,13 +19,13 @@ env_name = "CustomMyoBaodingBallsP1"
 FIRST_TASK = False
 
 # Path to normalized Vectorized environment (if not first task)
-PATH_TO_NORMALIZED_ENV = "output/training/2022-09-23_12-16-54/training_env.pkl"  # "trained_models/normalized_env_original"
+PATH_TO_NORMALIZED_ENV = "output/training/2022-09-23/12-16-54/training_env.pkl"  # "trained_models/normalized_env_original"
 
 # Path to pretrained network (if not first task)
-PATH_TO_PRETRAINED_NET = "output/training/2022-09-23_12-16-54/best_model.zip"  # "trained_models/best_model.zip"
+PATH_TO_PRETRAINED_NET = "output/training/2022-09-23/12-16-54/best_model.zip"  # "trained_models/best_model.zip"
 
 # Tensorboard log (will save best model during evaluation)
-now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+now = datetime.now().strftime("%Y-%m-%d/%H-%M-%S")
 TENSORBOARD_LOG = os.path.join("output", "training", now)
 
 
@@ -40,9 +40,9 @@ config = {
         "done": 0,
         "sparse": 0,
     },
-    "goal_time_period": [1e6, 1e6],
+    "goal_time_period": [10, 10],
     "task": "random",
-    "enable_rsi": True,
+    "enable_rsi": False,
 }
 
 # Function that creates and monitors vectorized environments:
@@ -64,7 +64,6 @@ if __name__ == "__main__":
         json.dump(config, file)
     shutil.copy(os.path.abspath(__file__), TENSORBOARD_LOG)
 
-        
     # Create vectorized environments:
     envs = make_parallel_envs(env_name, config, num_env=16)
 
@@ -108,8 +107,12 @@ if __name__ == "__main__":
             ),
         )
     else:
-        model = RecurrentPPO.load(PATH_TO_PRETRAINED_NET, env=envs)
+        model = RecurrentPPO.load(
+            PATH_TO_PRETRAINED_NET, env=envs, tensorboard_log=TENSORBOARD_LOG
+        )
 
     # Train and save model
-    model.learn(total_timesteps=10000000, callback=eval_callback)
+    model.learn(
+        total_timesteps=10000000, callback=eval_callback, reset_num_timesteps=True
+    )
     model.save("model_name")
