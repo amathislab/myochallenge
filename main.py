@@ -40,9 +40,11 @@ config = {
         "done": 0,
         "sparse": 0,
     },
-    "goal_time_period": [10, 10],
     "task": "random",
     "enable_rsi": False,
+    "enable_rhi": False,
+    "goal_time_period": [10, 10],
+    "drop_th": 1.25,
 }
 
 # Function that creates and monitors vectorized environments:
