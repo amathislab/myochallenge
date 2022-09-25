@@ -109,24 +109,23 @@ class CustomBaodingEnv(BaodingEnvV1):
             if reset_goal is None
             else reset_goal.copy()
         )
-        
-        if reset_vel is None:
-            qvel = self.init_qvel.copy()
-        else:
-            qvel = reset_vel
-        if reset_pose is None:
-            qpos = self.init_qpos.copy()
-            if self.rsi:
-                self.robot.reset(qpos, qvel)
-                qpos[23] = self.get_obs().copy()[35]
-                qpos[24] = self.get_obs().copy()[36]
-                qpos[30] = self.get_obs().copy()[38]
-                qpos[31] = self.get_obs().copy()[39]
-        else:
-            qpos = reset_pose
 
-        
+        # reset scene (MODIFIED from base class MujocoEnv)
+        qpos = self.init_qpos.copy() if reset_pose is None else reset_pose
+        qvel = self.init_qvel.copy() if reset_vel is None else reset_vel
+
         self.robot.reset(qpos, qvel)
+
+        if self.rsi:
+            obs = self.get_obs().copy()
+            qpos[23] = obs[35]  # ball 1 x-position
+            qpos[24] = obs[36]  # ball 1 y-position
+            qpos[25] = obs[37]  # ball 1 z-position
+            qpos[30] = obs[38]  # ball 2 x-position
+            qpos[31] = obs[39]  # ball 2 y-position
+            qpos[32] = obs[40]  # ball 2 z-position
+
+            self.set_state(qpos, qvel)
 
         return self.get_obs()
 
