@@ -147,8 +147,13 @@ class CustomBaodingEnv(BaodingEnvV1):
 
             self.set_state(qpos, qvel)
 
-        # if self.rhi:
-        #     qpos[1:-14] = 0
+        if self.rhi:
+            jnt_range = self.sim.model.jnt_range[:-2]
+            qpos[5:23] = self.np_random.uniform(low=0, high=jnt_range[5:,1]/2)
+
+            self.set_state(qpos, qvel)
+
+        self.robot.reset(qpos, qvel)
 
         return self.get_obs()
 
