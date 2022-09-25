@@ -117,6 +117,10 @@ class CustomBaodingEnv(BaodingEnvV1):
         self.robot.reset(qpos, qvel)
 
         if self.rsi:
+            # required to match balls and targets
+            self.step(np.zeros(39))
+
+            # initialize balls in random position
             obs = self.get_obs().copy()
             qpos[23] = obs[35]  # ball 1 x-position
             qpos[24] = obs[36]  # ball 1 y-position
@@ -140,7 +144,8 @@ class CustomBaodingEnv(BaodingEnvV1):
         obs_keys: list = BaodingEnvV1.DEFAULT_OBS_KEYS,
         weighted_reward_keys: list = DEFAULT_RWD_KEYS_AND_WEIGHTS,
         task=None,
-        enable_rsi=False,  # random state init
+        enable_rsi=False,  # random state init for balls
+        enable_rhi=False,  # random state init for hand position (fingers only)
         **kwargs
     ):
 
@@ -157,6 +162,7 @@ class CustomBaodingEnv(BaodingEnvV1):
             else:
                 raise ValueError("Unknown task for baoding: ", task)
         self.rsi = enable_rsi
+        self.rhi = enable_rhi
         self.drop_th = drop_th
         self.proximity_th = proximity_th
         self.goal_time_period = goal_time_period
