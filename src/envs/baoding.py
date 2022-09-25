@@ -81,6 +81,25 @@ class CustomBaodingEnv(BaodingEnvV1):
 
         return rwd_dict
 
+    def _init_targets_with_balls(self) -> None:
+        desired_angle_wrt_palm = self.goal[self.counter].copy()
+        desired_angle_wrt_palm[0] = desired_angle_wrt_palm[0] + self.ball_1_starting_angle
+        desired_angle_wrt_palm[1] = desired_angle_wrt_palm[1] + self.ball_2_starting_angle
+
+        desired_positions_wrt_palm = [0,0,0,0]
+        desired_positions_wrt_palm[0] = self.x_radius*np.cos(desired_angle_wrt_palm[0]) + self.center_pos[0]
+        desired_positions_wrt_palm[1] = self.y_radius*np.sin(desired_angle_wrt_palm[0]) + self.center_pos[1]
+        desired_positions_wrt_palm[2] = self.x_radius*np.cos(desired_angle_wrt_palm[1]) + self.center_pos[0]
+        desired_positions_wrt_palm[3] = self.y_radius*np.sin(desired_angle_wrt_palm[1]) + self.center_pos[1]
+
+        # update both sims with desired targets
+        for sim in [self.sim, self.sim_obsd]:
+            sim.model.site_pos[self.target1_sid, 0] = desired_positions_wrt_palm[0]
+            sim.model.site_pos[self.target1_sid, 1] = desired_positions_wrt_palm[1]
+            sim.model.site_pos[self.target2_sid, 0] = desired_positions_wrt_palm[2]
+            sim.model.site_pos[self.target2_sid, 1] = desired_positions_wrt_palm[3]
+            sim.forward()
+
     def reset(self, reset_pose=None, reset_vel=None, reset_goal=None, time_period=None):
         
         if self.rsi:
@@ -117,19 +136,24 @@ class CustomBaodingEnv(BaodingEnvV1):
         self.robot.reset(qpos, qvel)
 
         if self.rsi:
-            # required to match balls and targets
-            self.step(np.zeros(39))
+            self._init_targets_with_balls()
 
-            # initialize balls in random position
+            # update ball positions
             obs = self.get_obs().copy()
             qpos[23] = obs[35]  # ball 1 x-position
             qpos[24] = obs[36]  # ball 1 y-position
-            qpos[25] = obs[37]  # ball 1 z-position
             qpos[30] = obs[38]  # ball 2 x-position
             qpos[31] = obs[39]  # ball 2 y-position
-            qpos[32] = obs[40]  # ball 2 z-position
 
             self.set_state(qpos, qvel)
+
+        if self.rhi:
+            jnt_range = self.sim.model.jnt_range[:-2]
+            qpos[5:23] = self.np_random.uniform(low=0, high=jnt_range[5:,1]/2)
+
+            self.set_state(qpos, qvel)
+
+        self.robot.reset(qpos, qvel)
 
         return self.get_obs()
 
