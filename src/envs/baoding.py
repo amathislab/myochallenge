@@ -81,6 +81,25 @@ class CustomBaodingEnv(BaodingEnvV1):
 
         return rwd_dict
 
+    def _init_targets_with_balls(self) -> None:
+        desired_angle_wrt_palm = self.goal[self.counter].copy()
+        desired_angle_wrt_palm[0] = desired_angle_wrt_palm[0] + self.ball_1_starting_angle
+        desired_angle_wrt_palm[1] = desired_angle_wrt_palm[1] + self.ball_2_starting_angle
+
+        desired_positions_wrt_palm = [0,0,0,0]
+        desired_positions_wrt_palm[0] = self.x_radius*np.cos(desired_angle_wrt_palm[0]) + self.center_pos[0]
+        desired_positions_wrt_palm[1] = self.y_radius*np.sin(desired_angle_wrt_palm[0]) + self.center_pos[1]
+        desired_positions_wrt_palm[2] = self.x_radius*np.cos(desired_angle_wrt_palm[1]) + self.center_pos[0]
+        desired_positions_wrt_palm[3] = self.y_radius*np.sin(desired_angle_wrt_palm[1]) + self.center_pos[1]
+
+        # update both sims with desired targets
+        for sim in [self.sim, self.sim_obsd]:
+            sim.model.site_pos[self.target1_sid, 0] = desired_positions_wrt_palm[0]
+            sim.model.site_pos[self.target1_sid, 1] = desired_positions_wrt_palm[1]
+            sim.model.site_pos[self.target2_sid, 0] = desired_positions_wrt_palm[2]
+            sim.model.site_pos[self.target2_sid, 1] = desired_positions_wrt_palm[3]
+            sim.forward()
+
     def reset(self, reset_pose=None, reset_vel=None, reset_goal=None, time_period=None):
         
         if self.rsi:
@@ -109,23 +128,31 @@ class CustomBaodingEnv(BaodingEnvV1):
             if reset_goal is None
             else reset_goal.copy()
         )
-        
-        if reset_vel is None:
-            qvel = self.init_qvel.copy()
-        else:
-            qvel = reset_vel
-        if reset_pose is None:
-            qpos = self.init_qpos.copy()
-            if self.rsi:
-                self.robot.reset(qpos, qvel)
-                qpos[23] = self.get_obs().copy()[35]
-                qpos[24] = self.get_obs().copy()[36]
-                qpos[30] = self.get_obs().copy()[38]
-                qpos[31] = self.get_obs().copy()[39]
-        else:
-            qpos = reset_pose
 
-        
+        # reset scene (MODIFIED from base class MujocoEnv)
+        qpos = self.init_qpos.copy() if reset_pose is None else reset_pose
+        qvel = self.init_qvel.copy() if reset_vel is None else reset_vel
+
+        self.robot.reset(qpos, qvel)
+
+        if self.rsi:
+            self._init_targets_with_balls()
+
+            # update ball positions
+            obs = self.get_obs().copy()
+            qpos[23] = obs[35]  # ball 1 x-position
+            qpos[24] = obs[36]  # ball 1 y-position
+            qpos[30] = obs[38]  # ball 2 x-position
+            qpos[31] = obs[39]  # ball 2 y-position
+
+            self.set_state(qpos, qvel)
+
+        if self.rhi:
+            jnt_range = self.sim.model.jnt_range[:-2]
+            qpos[5:23] = self.np_random.uniform(low=0, high=jnt_range[5:,1]/2)
+
+            self.set_state(qpos, qvel)
+
         self.robot.reset(qpos, qvel)
 
         return self.get_obs()
@@ -141,7 +168,8 @@ class CustomBaodingEnv(BaodingEnvV1):
         obs_keys: list = BaodingEnvV1.DEFAULT_OBS_KEYS,
         weighted_reward_keys: list = DEFAULT_RWD_KEYS_AND_WEIGHTS,
         task=None,
-        enable_rsi=False,  # random state init
+        enable_rsi=False,  # random state init for balls
+        enable_rhi=False,  # random state init for hand position (fingers only)
         **kwargs
     ):
 
@@ -158,6 +186,7 @@ class CustomBaodingEnv(BaodingEnvV1):
             else:
                 raise ValueError("Unknown task for baoding: ", task)
         self.rsi = enable_rsi
+        self.rhi = enable_rhi
         self.drop_th = drop_th
         self.proximity_th = proximity_th
         self.goal_time_period = goal_time_period
