@@ -1,4 +1,5 @@
 import os
+from pickle import FALSE
 import numpy as np
 import torch.nn as nn
 import json
@@ -19,10 +20,10 @@ env_name = "CustomMyoBaodingBallsP1"
 FIRST_TASK = False
 
 # Path to normalized Vectorized environment (if not first task)
-PATH_TO_NORMALIZED_ENV = "output/training/2022-09-23/12-16-54/training_env.pkl"  # "trained_models/normalized_env_original"
+PATH_TO_NORMALIZED_ENV = "output/training/2022-09-24/18-23-27/training_env.pkl"  # "trained_models/normalized_env_original"
 
 # Path to pretrained network (if not first task)
-PATH_TO_PRETRAINED_NET = "output/training/2022-09-23/12-16-54/best_model.zip"  # "trained_models/best_model.zip"
+PATH_TO_PRETRAINED_NET = "output/training/2022-09-24/18-23-27/best_model.zip"  # "trained_models/best_model.zip"
 
 # Tensorboard log (will save best model during evaluation)
 now = datetime.now().strftime("%Y-%m-%d/%H-%M-%S")
@@ -40,9 +41,9 @@ config = {
         "done": 0,
         "sparse": 0,
     },
-    "goal_time_period": [10, 10],
+    "goal_time_period": [15, 15],
     "task": "random",
-    "enable_rsi": False,
+    "enable_rsi": True,
 }
 
 # Function that creates and monitors vectorized environments:
@@ -80,7 +81,7 @@ if __name__ == "__main__":
         callback_on_new_best=env_dump_callback,
         best_model_save_path=TENSORBOARD_LOG,
         log_path=TENSORBOARD_LOG,
-        eval_freq=1000,
+        eval_freq=5000,
         deterministic=True,
         render=False,
         n_eval_episodes=20,
@@ -115,4 +116,3 @@ if __name__ == "__main__":
     model.learn(
         total_timesteps=10000000, callback=eval_callback, reset_num_timesteps=True
     )
-    model.save("model_name")
