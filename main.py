@@ -20,10 +20,10 @@ env_name = "CustomMyoBaodingBallsP1"
 FIRST_TASK = False
 
 # Path to normalized Vectorized environment (if not first task)
-PATH_TO_NORMALIZED_ENV = "output/training/2022-09-24/18-23-27/training_env.pkl"  # "trained_models/normalized_env_original"
+PATH_TO_NORMALIZED_ENV = "output/training/2022-09-26/11-13-28/training_env.pkl"  # "trained_models/normalized_env_original"
 
 # Path to pretrained network (if not first task)
-PATH_TO_PRETRAINED_NET = "output/training/2022-09-24/18-23-27/best_model.zip"  # "trained_models/best_model.zip"
+PATH_TO_PRETRAINED_NET = "output/training/2022-09-26/11-13-28/best_model.zip"  # "trained_models/best_model.zip"
 
 # Tensorboard log (will save best model during evaluation)
 now = datetime.now().strftime("%Y-%m-%d/%H-%M-%S")
@@ -44,7 +44,7 @@ config = {
     "task": "random",
     "enable_rsi": True,
     "enable_rhi": False,
-    "goal_time_period": [15, 15],
+    "goal_time_period": [20, 25],
 }
 
 # Function that creates and monitors vectorized environments:
