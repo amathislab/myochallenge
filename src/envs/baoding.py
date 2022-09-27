@@ -101,7 +101,7 @@ class CustomBaodingEnv(BaodingEnvV1):
             sim.forward()
 
     def reset(self, reset_pose=None, reset_vel=None, reset_goal=None, time_period=None):
-        
+        self.which_task = self.sample_task()
         if self.rsi:
             # MODIFICATION: randomize starting target position along the cycle
             random_phase = np.random.uniform(low=-np.pi, high=np.pi)
@@ -174,17 +174,8 @@ class CustomBaodingEnv(BaodingEnvV1):
     ):
 
         # user parameters
-        if task is None:
-            self.which_task = Task(WHICH_TASK)
-        else:
-            if task == "cw":
-                self.which_task = Task(Task.BAODING_CW)
-            elif task == "ccw":
-                self.which_task = Task(Task.BAODING_CCW)
-            elif task == "random":
-                self.which_task = Task(random.choice(list(Task)))
-            else:
-                raise ValueError("Unknown task for baoding: ", task)
+        self.task = task
+        self.which_task = self.sample_task()
         self.rsi = enable_rsi
         self.rhi = enable_rhi
         self.drop_th = drop_th
@@ -234,3 +225,16 @@ class CustomBaodingEnv(BaodingEnvV1):
         # reset position
         self.init_qpos[:-14] *= 0  # Use fully open as init pos
         self.init_qpos[0] = -1.57  # Palm up
+        
+    def sample_task(self):
+        if self.task is None:
+            return Task(WHICH_TASK)
+        else:
+            if self.task == "cw":
+                return Task(Task.BAODING_CW)
+            elif self.task == "ccw":
+                return Task(Task.BAODING_CCW)
+            elif self.task == "random":
+                return Task(random.choice(list(Task)))
+            else:
+                raise ValueError("Unknown task for baoding: ", self.task)
