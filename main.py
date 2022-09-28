@@ -1,18 +1,19 @@
-import os
-from pickle import FALSE
-import numpy as np
-import torch.nn as nn
 import json
+import os
 import shutil
 from datetime import datetime
+from pickle import FALSE
+
+import numpy as np
+import torch.nn as nn
 from sb3_contrib import RecurrentPPO
 from stable_baselines3.common.callbacks import EvalCallback
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import VecNormalize
 from stable_baselines3.common.vec_env.subproc_vec_env import SubprocVecEnv
+
 from src.envs.environment_factory import EnvironmentFactory
 from src.metrics.sb_callbacks import EnvDumpCallback
-
 
 env_name = "CustomMyoBaodingBallsP1"
 
