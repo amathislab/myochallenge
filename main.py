@@ -118,8 +118,8 @@ if __name__ == "__main__":
     env_score = EnvironmentFactory.register(env_name, **config_score)
     env_effort = EnvironmentFactory.register(env_name, **config_effort)
 
-    score_callback = EvaluateLSTM(eval_freq = 100, eval_env = env_score, name = 'eval/score')
-    effort_callback = EvaluateLSTM(eval_freq = 100, eval_env = env_effort, name = 'eval/effort')
+    score_callback = EvaluateLSTM(eval_freq = 2500, eval_env = env_score, name = 'eval/score')
+    effort_callback = EvaluateLSTM(eval_freq = 2500, eval_env = env_effort, name = 'eval/effort')
 
     # Create model (hyperparameters from RL Zoo HalfCheetak)
     if FIRST_TASK:
