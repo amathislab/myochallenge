@@ -47,7 +47,7 @@ config = {
     },
     "task": "cw",
     "enable_rsi": True,
-    "enable_rhi": True,
+    "enable_rhi": False,
     "goal_time_period": [20, 25],
 }
 
@@ -87,7 +87,7 @@ if __name__ == "__main__":
         callback_on_new_best=env_dump_callback,
         best_model_save_path=TENSORBOARD_LOG,
         log_path=TENSORBOARD_LOG,
-        eval_freq=100,
+        eval_freq=2500,
         deterministic=True,
         render=False,
         n_eval_episodes=20,
@@ -150,3 +150,6 @@ if __name__ == "__main__":
     model.learn(
         total_timesteps=10000000, callback=[eval_callback,score_callback,effort_callback], reset_num_timesteps=True
     )
+
+    model.save("rsi_static_TO_cw_20to25_rsi_no_rhi")
+    envs.save('normalized_env_rsi_static_TO_cw_20to25_rsi_no_rhi')
