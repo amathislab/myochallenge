@@ -25,8 +25,8 @@ class EvaluateLSTM(BaseCallback):
                 episode_starts = np.ones((1,), dtype=bool)
                 done = False
                 while not done:
-                    action, lstm_states = self.model.predict(
-                        self.training_env.normalize_obs(obs),
+                    action, lstm_states = self.model.predict( # use the training model to predict (object from super class)
+                        self.training_env.normalize_obs(obs), # use the training environment to normalize (object from super class)
                         state=lstm_states,
                         episode_start=episode_starts,
                         deterministic=True,
