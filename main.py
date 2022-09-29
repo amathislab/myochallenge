@@ -1,6 +1,8 @@
+import copy
 import json
 import os
 import shutil
+from calendar import c
 from datetime import datetime
 from pickle import FALSE
 
@@ -13,6 +15,7 @@ from stable_baselines3.common.vec_env import VecNormalize
 from stable_baselines3.common.vec_env.subproc_vec_env import SubprocVecEnv
 
 from src.envs.environment_factory import EnvironmentFactory
+from src.metrics.custom_callbacks import EvaluateLSTM
 from src.metrics.sb_callbacks import EnvDumpCallback
 
 env_name = "CustomMyoBaodingBallsP1"
@@ -21,10 +24,10 @@ env_name = "CustomMyoBaodingBallsP1"
 FIRST_TASK = False
 
 # Path to normalized Vectorized environment (if not first task)
-PATH_TO_NORMALIZED_ENV = "output/training/2022-09-26/11-13-28/training_env.pkl"  # "trained_models/normalized_env_original"
+PATH_TO_NORMALIZED_ENV = "trained_models/normalized_env_rsi_static"  # "trained_models/normalized_env_original"
 
 # Path to pretrained network (if not first task)
-PATH_TO_PRETRAINED_NET = "output/training/2022-09-26/11-13-28/best_model.zip"  # "trained_models/best_model.zip"
+PATH_TO_PRETRAINED_NET = "trained_models/rsi_static.zip"  # "trained_models/best_model.zip"
 
 # Tensorboard log (will save best model during evaluation)
 now = datetime.now().strftime("%Y-%m-%d/%H-%M-%S")
@@ -38,13 +41,13 @@ config = {
         "pos_dist_2": 1,
         "act_reg": 0,
         "alive": 1,
-        "solved": 1,
+        "solved": 5,
         "done": 0,
         "sparse": 0,
     },
-    "task": "random",
+    "task": "cw",
     "enable_rsi": True,
-    "enable_rhi": False,
+    "enable_rhi": True,
     "goal_time_period": [20, 25],
 }
 
@@ -76,18 +79,47 @@ if __name__ == "__main__":
     else:
         envs = VecNormalize.load(PATH_TO_NORMALIZED_ENV, envs)
 
-    # Create callback to evaluate
+    # Callback to evaluate dense rewards
     env_dump_callback = EnvDumpCallback(TENSORBOARD_LOG, verbose=0)
+
     eval_callback = EvalCallback(
         envs,
         callback_on_new_best=env_dump_callback,
         best_model_save_path=TENSORBOARD_LOG,
         log_path=TENSORBOARD_LOG,
-        eval_freq=5000,
+        eval_freq=100,
         deterministic=True,
         render=False,
         n_eval_episodes=20,
     )
+
+    # Callbacks for score and for effort
+
+    config_score, config_effort = copy.deepcopy(config), copy.deepcopy(config)
+
+    config_score['weighted_reward_keys'].update({
+        'pos_dist_1': 0,
+        'pos_dist_2': 0,
+        'act_reg': 0,
+        'solved': 5,
+        'alive':0,
+        'done': 0,
+        'sparse': 0})
+
+    config_effort['weighted_reward_keys'].update({
+        'pos_dist_1': 0,
+        'pos_dist_2': 0,
+        'act_reg': 1,
+        'solved': 0,
+        'alive':0,
+        'done': 0,
+        'sparse': 0})
+
+    env_score = EnvironmentFactory.register(env_name, **config_score)
+    env_effort = EnvironmentFactory.register(env_name, **config_effort)
+
+    score_callback = EvaluateLSTM(eval_freq = 100, eval_env = env_score, name = 'eval/score')
+    effort_callback = EvaluateLSTM(eval_freq = 100, eval_env = env_effort, name = 'eval/effort')
 
     # Create model (hyperparameters from RL Zoo HalfCheetak)
     if FIRST_TASK:
@@ -116,5 +148,5 @@ if __name__ == "__main__":
 
     # Train and save model
     model.learn(
-        total_timesteps=10000000, callback=eval_callback, reset_num_timesteps=True
+        total_timesteps=10000000, callback=[eval_callback,score_callback,effort_callback], reset_num_timesteps=True
     )
