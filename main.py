@@ -30,7 +30,7 @@ PATH_TO_NORMALIZED_ENV = "trained_models/normalized_env_rsi_static"  # "trained_
 PATH_TO_PRETRAINED_NET = "trained_models/rsi_static.zip"  # "trained_models/best_model.zip"
 
 # Tensorboard log (will save best model during evaluation)
-now = datetime.now().strftime("%Y-%m-%d/%H-%M-%S")
+now = datetime.now().strftime("%Y-%m-%d/%H-%M-%S") + "_rsi_rhi_random_20_20"
 TENSORBOARD_LOG = os.path.join("output", "training", now)
 
 
@@ -39,17 +39,17 @@ config = {
     "weighted_reward_keys": {
         "pos_dist_1": 1,
         "pos_dist_2": 1,
-        "act_reg": 0.1,
+        "act_reg": 0,
         "alive": 1,
         "solved": 5,
         "done": 0,
         "sparse": 0,
-        "palm_up": 2,
+        "palm_up": 0,
     },
-    "task": "cw",
+    "task": "random",
     "enable_rsi": True,
     "enable_rhi": False,
-    "goal_time_period": [20, 25],
+    "goal_time_period": [20, 20],
     "drop_th": 1.3,
 }
 
@@ -153,5 +153,5 @@ if __name__ == "__main__":
         total_timesteps=10_000_000, callback=[eval_callback,score_callback,effort_callback], reset_num_timesteps=True
     )
 
-    model.save("rsi_static_TO_cw_20to25_rsi_no_rhi")
-    envs.save('normalized_env_rsi_static_TO_cw_20to25_rsi_no_rhi')
+    model.save(os.path.join(TENSORBOARD_LOG, "final_model.pkl"))
+    envs.save(os.path.join(TENSORBOARD_LOG, "final_env.pkl"))
