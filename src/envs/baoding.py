@@ -165,7 +165,8 @@ class CustomBaodingEnv(BaodingEnvV1):
         self.robot.reset(qpos, qvel)
 
         if self.rsi:
-            self._init_targets_with_balls()
+            # self._init_targets_with_balls()
+            self.step(np.zeros(39))
 
             # update ball positions
             obs = self.get_obs().copy()
@@ -179,8 +180,6 @@ class CustomBaodingEnv(BaodingEnvV1):
         if self.rhi:
             qpos = self._add_noise_to_hand_position(qpos)
             self.set_state(qpos, qvel)
-
-        self.robot.reset(qpos, qvel)
 
         return self.get_obs()
 
