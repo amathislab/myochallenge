@@ -39,16 +39,18 @@ config = {
     "weighted_reward_keys": {
         "pos_dist_1": 1,
         "pos_dist_2": 1,
-        "act_reg": 0,
+        "act_reg": 0.1,
         "alive": 1,
         "solved": 5,
         "done": 0,
         "sparse": 0,
+        "palm_up": 2,
     },
     "task": "cw",
     "enable_rsi": True,
     "enable_rhi": False,
     "goal_time_period": [20, 25],
+    "drop_th": 1.3,
 }
 
 # Function that creates and monitors vectorized environments:
@@ -148,7 +150,7 @@ if __name__ == "__main__":
 
     # Train and save model
     model.learn(
-        total_timesteps=10000000, callback=[eval_callback,score_callback,effort_callback], reset_num_timesteps=True
+        total_timesteps=10_000_000, callback=[eval_callback,score_callback,effort_callback], reset_num_timesteps=True
     )
 
     model.save("rsi_static_TO_cw_20to25_rsi_no_rhi")
