@@ -107,6 +107,27 @@ class CustomBaodingEnv(BaodingEnvV1):
             sim.model.site_pos[self.target2_sid, 1] = desired_positions_wrt_palm[3]
             sim.forward()
 
+    def _add_noise_to_hand_position(self, qpos) -> np.ndarray:
+        # pronation-supination: noise 10 degrees from facing up (one direction only)
+        qpos[0] = self.np_random.uniform(low= -np.pi/2 + np.pi/18, high = -np.pi/2)
+
+        # ulnar deviation of wrist: noise 10 degrees on either side
+        qpos[1] = self.np_random.uniform(low= -np.pi/18, high = np.pi/18)
+
+        # extension flexion of the wrist: noise 10 degrees on either side
+        qpos[2] = self.np_random.uniform(low= -np.pi/18, high = np.pi/18)
+
+        # thumb all joints: noise 10 degrees on either side
+        qpos[3:7] = self.np_random.uniform(low= -np.pi/18, high = np.pi/18)
+        
+        # finger joints: noise fully open to 30 degrees bent
+        qpos[[7,9,10,11,13,14,15,17,18,19,21,22]] = self.np_random.uniform(low=0, high=np.pi/6)
+
+        # finger abduction (sideways angle): noise 5 degrees on either side
+        qpos[[8,12,16,20]] = self.np_random.uniform(low= -np.pi/36, high= np.pi/36)
+
+        return qpos
+
     def reset(self, reset_pose=None, reset_vel=None, reset_goal=None, time_period=None):
         self.which_task = self.sample_task()
         if self.rsi:
@@ -156,19 +177,7 @@ class CustomBaodingEnv(BaodingEnvV1):
             self.set_state(qpos, qvel)
 
         if self.rhi:
-            jnt_range = self.sim.model.jnt_range[:-2]
-            # pronation-supination: noise 5 degrees from facing up (one direction only)
-            qpos[0] = self.np_random.uniform(low= 1.5, high = 1.57)
-
-            # ulnar deviation of wrist: noise 10 degrees on either side
-            qpos[1] = self.np_random.uniform(low= -np.pi/18, high = np.pi/18)
-
-            # extension flexion of the wrist: noise 5 degrees on either side
-            qpos[2] = self.np_random.uniform(low= -np.pi/36, high = np.pi/36)
-
-            # thumb and finger joins: noise 22.5 degrees from fully open
-            qpos[3:23] = self.np_random.uniform(low=0, high=jnt_range[3:,1]/2)
-
+            qpos = self._add_noise_to_hand_position(qpos)
             self.set_state(qpos, qvel)
 
         self.robot.reset(qpos, qvel)
