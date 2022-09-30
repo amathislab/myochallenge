@@ -13,6 +13,7 @@ class CustomBaodingEnv(BaodingEnvV1):
         "pos_dist_2": 5.0,
         "alive": 0.0,
         "act_reg": 0.0,
+        "palm_up": 0.0,
     }
 
     def get_reward_dict(self, obs_dict):
@@ -41,6 +42,11 @@ class CustomBaodingEnv(BaodingEnvV1):
         is_fall_2 = object2_pos < self.drop_th
         is_fall = np.logical_or(is_fall_1, is_fall_2)  # keep both balls up
 
+        # rewards for keeping palm up: positive in a range
+        pronation_reward = np.exp(-(self.get_obs()[0] + 1.57) * 5) - 0.5
+        flexion_reward = np.exp(-abs(self.get_obs()[2]) * 4) - 0.5
+        palm_up_reward = pronation_reward + flexion_reward
+
         rwd_dict = collections.OrderedDict(
             (
                 # Perform reward tuning here --
@@ -51,6 +57,7 @@ class CustomBaodingEnv(BaodingEnvV1):
                 ("pos_dist_1", -1.0 * target1_dist),
                 ("pos_dist_2", -1.0 * target2_dist),
                 ("alive", ~is_fall),
+                ("palm_up", palm_up_reward),
                 # Must keys
                 ("act_reg", -1.0 * act_mag),
                 ("sparse", -target_dist),
@@ -118,11 +125,12 @@ class CustomBaodingEnv(BaodingEnvV1):
         self.y_radius = self.np_random.uniform(
             low=self.goal_yrange[0], high=self.goal_yrange[1]
         )
+        
         # reset goal
         if time_period == None:
             time_period = self.np_random.uniform(
                 low=self.goal_time_period[0], high=self.goal_time_period[1]
-            )
+        )
         self.goal = (
             self.create_goal_trajectory(time_step=self.dt, time_period=time_period)
             if reset_goal is None
@@ -149,7 +157,17 @@ class CustomBaodingEnv(BaodingEnvV1):
 
         if self.rhi:
             jnt_range = self.sim.model.jnt_range[:-2]
-            qpos[5:23] = self.np_random.uniform(low=0, high=jnt_range[5:,1]/2)
+            # pronation-supination: noise 5 degrees from facing up (one direction only)
+            qpos[0] = self.np_random.uniform(low= 1.5, high = 1.57)
+
+            # ulnar deviation of wrist: noise 10 degrees on either side
+            qpos[1] = self.np_random.uniform(low= -np.pi/18, high = np.pi/18)
+
+            # extension flexion of the wrist: noise 5 degrees on either side
+            qpos[2] = self.np_random.uniform(low= -np.pi/36, high = np.pi/36)
+
+            # thumb and finger joins: noise 22.5 degrees from fully open
+            qpos[3:23] = self.np_random.uniform(low=0, high=jnt_range[3:,1]/2)
 
             self.set_state(qpos, qvel)
 
