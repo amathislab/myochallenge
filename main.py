@@ -141,7 +141,6 @@ if __name__ == "__main__":
             clip_range=0.25,
             n_epochs=10,
             use_sde=True,
-            target_kl=0.02,
             max_grad_norm=0.8,
             vf_coef=0.5,
             policy_kwargs=dict(
