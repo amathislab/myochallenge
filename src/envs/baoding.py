@@ -13,7 +13,7 @@ class CustomBaodingEnv(BaodingEnvV1):
         "pos_dist_2": 5.0,
         "alive": 0.0,
         "act_reg": 0.0,
-        "palm_up": 0.0,
+        # "palm_up": 0.0,
     }
 
     def get_reward_dict(self, obs_dict):
@@ -42,10 +42,10 @@ class CustomBaodingEnv(BaodingEnvV1):
         is_fall_2 = object2_pos < self.drop_th
         is_fall = np.logical_or(is_fall_1, is_fall_2)  # keep both balls up
 
-        # rewards for keeping palm up: positive in a range
-        pronation_reward = np.exp(-(self.get_obs()[0] + 1.57) * 5) - 0.5
-        flexion_reward = np.exp(-abs(self.get_obs()[2]) * 4) - 0.5
-        palm_up_reward = pronation_reward + flexion_reward
+        # # rewards for keeping palm up: positive in a range
+        # pronation_reward = np.exp(-(self.get_obs()[0] + 1.57) * 5) - 0.5
+        # flexion_reward = np.exp(-abs(self.get_obs()[2]) * 4) - 0.5
+        # palm_up_reward = np.linalg.norm(pronation_reward + flexion_reward)
 
         rwd_dict = collections.OrderedDict(
             (
@@ -57,7 +57,7 @@ class CustomBaodingEnv(BaodingEnvV1):
                 ("pos_dist_1", -1.0 * target1_dist),
                 ("pos_dist_2", -1.0 * target2_dist),
                 ("alive", ~is_fall),
-                ("palm_up", palm_up_reward),
+                # ("palm_up", palm_up_reward),
                 # Must keys
                 ("act_reg", -1.0 * act_mag),
                 ("sparse", -target_dist),
@@ -107,24 +107,37 @@ class CustomBaodingEnv(BaodingEnvV1):
             sim.model.site_pos[self.target2_sid, 1] = desired_positions_wrt_palm[3]
             sim.forward()
 
-    def _add_noise_to_hand_position(self, qpos) -> np.ndarray:
-        # pronation-supination: noise 10 degrees from facing up (one direction only)
-        qpos[0] = self.np_random.uniform(low= -np.pi/2 + np.pi/18, high = -np.pi/2)
+    def _add_noise_to_palm_position(self, qpos: np.ndarray, noise: float = 1) -> np.ndarray:
+        assert 0 <= noise <= 1, "Noise must be between 0 and 1"
 
-        # ulnar deviation of wrist: noise 10 degrees on either side
-        qpos[1] = self.np_random.uniform(low= -np.pi/18, high = np.pi/18)
+        # pronation-supination of the wrist
+        # noise = 1 corresponds to 10 degrees from facing up (one direction only)
+        qpos[0] = self.np_random.uniform(low= (-np.pi/2 + np.pi/18) * noise, high = -np.pi/2 * noise)
 
-        # extension flexion of the wrist: noise 10 degrees on either side
-        qpos[2] = self.np_random.uniform(low= -np.pi/18, high = np.pi/18)
+        # ulnar deviation of wrist: 
+        # noise = 1 corresponds to 10 degrees on either side
+        qpos[1] = self.np_random.uniform(low= -np.pi/18 * noise, high = np.pi/18 * noise)
 
-        # thumb all joints: noise 10 degrees on either side
-        qpos[3:7] = self.np_random.uniform(low= -np.pi/18, high = np.pi/18)
+        # extension flexion of the wrist
+        # noise = 1 corresponds to 10 degrees on either side
+        qpos[2] = self.np_random.uniform(low= -np.pi/18 * noise, high = np.pi/18 * noise)
+
+        return qpos
+
+    def _add_noise_to_finger_positions(self, qpos: np.ndarray, noise: float = 1) -> np.ndarray:
+        assert 0 <= noise <= 1, "Noise parameter must be between 0 and 1"
         
-        # finger joints: noise fully open to 30 degrees bent
-        qpos[[7,9,10,11,13,14,15,17,18,19,21,22]] = self.np_random.uniform(low=0, high=np.pi/6)
+        # thumb all joints
+        # noise = 1 corresponds to 10 degrees on either side
+        qpos[3:7] = self.np_random.uniform(low= -np.pi/18 * noise, high = np.pi/18 * noise)
+        
+        # finger joints
+        # noise = 1 corresponds to 30 degrees bent instead of fully open
+        qpos[[7,9,10,11,13,14,15,17,18,19,21,22]] = self.np_random.uniform(low=0, high=np.pi/6 * noise)
 
-        # finger abduction (sideways angle): noise 5 degrees on either side
-        qpos[[8,12,16,20]] = self.np_random.uniform(low= -np.pi/36, high= np.pi/36)
+        # finger abduction (sideways angle)
+        # noise = 1 corresponds to 5 degrees on either side
+        qpos[[8,12,16,20]] = self.np_random.uniform(low= -np.pi/36 * noise, high= np.pi/36 * noise)
 
         return qpos
 
@@ -175,10 +188,13 @@ class CustomBaodingEnv(BaodingEnvV1):
             qpos[30] = obs[38]  # ball 2 x-position
             qpos[31] = obs[39]  # ball 2 y-position
 
-            self.set_state(qpos, qvel)
+        if self.noise_palm:
+            qpos = self._add_noise_to_palm_position(qpos, self.noise_palm)
 
-        if self.rhi:
-            qpos = self._add_noise_to_hand_position(qpos)
+        if self.noise_fingers:
+            qpos = self._add_noise_to_finger_positions(qpos, self.noise_fingers)
+        
+        if self.rsi or self.noise_palm or self.noise_fingers:
             self.set_state(qpos, qvel)
 
         return self.get_obs()
@@ -195,7 +211,8 @@ class CustomBaodingEnv(BaodingEnvV1):
         weighted_reward_keys: list = DEFAULT_RWD_KEYS_AND_WEIGHTS,
         task=None,
         enable_rsi=False,  # random state init for balls
-        enable_rhi=False,  # random state init for hand position (fingers only)
+        noise_palm=0,      # magnitude of noise for palm (between 0 and 1)
+        noise_fingers=0,   # magnitude of noise for fingers (between 0 and 1)
         **kwargs
     ):
 
@@ -203,7 +220,8 @@ class CustomBaodingEnv(BaodingEnvV1):
         self.task = task
         self.which_task = self.sample_task()
         self.rsi = enable_rsi
-        self.rhi = enable_rhi
+        self.noise_palm = noise_palm
+        self.noise_fingers = noise_fingers
         self.drop_th = drop_th
         self.proximity_th = proximity_th
         self.goal_time_period = goal_time_period

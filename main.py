@@ -4,7 +4,6 @@ import os
 import shutil
 from calendar import c
 from datetime import datetime
-from pickle import FALSE
 
 import numpy as np
 import torch.nn as nn
@@ -44,12 +43,14 @@ config = {
         "solved": 5,
         "done": 0,
         "sparse": 0,
-        "palm_up": 2,
     },
     "task": "cw",
     "enable_rsi": True,
-    "enable_rhi": False,
-    "goal_time_period": [20, 25],
+    "noise_palm": 0.1,
+    "noise_fingers": 0.1,
+    "goal_time_period": [20, 25],   # phase 2: (4, 6)
+    "goal_xrange": (0.025, 0.025),  # phase 2: (0.020, 0.030)
+    "goal_yrange": (0.028, 0.028),  # phase 2: (0.022, 0.032)
     "drop_th": 1.3,
 }
 
@@ -130,12 +131,21 @@ if __name__ == "__main__":
             envs,
             verbose=2,
             tensorboard_log=TENSORBOARD_LOG,
-            batch_size=128,
-            n_steps=256,
+            batch_size=32,
+            n_steps=512,
             gamma=0.99,
             gae_lambda=0.9,
             n_epochs=10,
+            ent_coef= 3e-6,
+            learning_rate=2e-5,
+            clip_range=0.25,
+            n_epochs=10,
+            use_sde=True,
+            target_kl=0.02,
+            max_grad_norm=0.8,
+            vf_coef=0.5,
             policy_kwargs=dict(
+                log_std_init=-2,
                 ortho_init=False,
                 activation_fn=nn.ReLU,
                 net_arch=[dict(pi=[], vf=[])],
