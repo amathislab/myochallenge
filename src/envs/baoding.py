@@ -112,7 +112,7 @@ class CustomBaodingEnv(BaodingEnvV1):
 
         # pronation-supination of the wrist
         # noise = 1 corresponds to 10 degrees from facing up (one direction only)
-        qpos[0] = self.np_random.uniform(low= -np.pi/2 * noise, high = -np.pi/2 + np.pi/18 * noise)
+        qpos[0] = self.np_random.uniform(low= -np.pi/2, high = -np.pi/2 + np.pi/18 * noise)
 
         # ulnar deviation of wrist: 
         # noise = 1 corresponds to 10 degrees on either side
