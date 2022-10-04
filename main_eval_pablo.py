@@ -12,12 +12,12 @@ env_name = "CustomMyoBaodingBallsP1"
 
 # Path to normalized Vectorized environment (if not first task)
 PATH_TO_NORMALIZED_ENV = (
-    "trained_models/normalized_env_original"
+    "./trained_models/env_final_period4to6.pkl"
 )
 
 # Path to pretrained network (if not first task)
 PATH_TO_PRETRAINED_NET = (
-    "trained_models/best_model.zip"
+    "./trained_models/final_period4to6.zip"
 )
 
 
@@ -33,6 +33,8 @@ config = {
         "sparse": 0,
     },
     "goal_time_period": [5, 5],
+    "noise_palm": 0,
+    "noise_fingers": 0,
 }
 
 
@@ -55,7 +57,12 @@ if __name__ == "__main__":
     envs = VecNormalize.load(PATH_TO_NORMALIZED_ENV, envs)
 
     # EVALUATE
-    eval_model = RecurrentPPO.load(PATH_TO_PRETRAINED_NET, env=envs)
+    custom_objects = {      # need to define this since my python version is newer
+        "learning_rate": 0.0,
+        "lr_schedule": lambda _: 0.0,
+        "clip_range": lambda _: 0.0,
+    }
+    eval_model = RecurrentPPO.load(PATH_TO_PRETRAINED_NET, env=envs, custom_objects=custom_objects)
     eval_env = EnvironmentFactory.register(env_name, **config)
 
     # Enjoy trained agent
