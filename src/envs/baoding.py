@@ -42,10 +42,10 @@ class CustomBaodingEnv(BaodingEnvV1):
         is_fall_2 = object2_pos < self.drop_th
         is_fall = np.logical_or(is_fall_1, is_fall_2)  # keep both balls up
 
-        # # rewards for keeping palm up: positive in a range
+        # # rewards for keeping palm up: negative for deviations
         # pronation_reward = np.exp(-(self.get_obs()[0] + 1.57) * 5) - 0.5
-        # flexion_reward = np.exp(-abs(self.get_obs()[2]) * 4) - 0.5
-        # palm_up_reward = np.linalg.norm(pronation_reward + flexion_reward)
+        # flexion_reward = np.exp(-abs(self.get_obs()[2]) * 2) - 0.5
+        # palm_up_reward = pronation_reward + flexion_reward
 
         rwd_dict = collections.OrderedDict(
             (
@@ -112,7 +112,7 @@ class CustomBaodingEnv(BaodingEnvV1):
 
         # pronation-supination of the wrist
         # noise = 1 corresponds to 10 degrees from facing up (one direction only)
-        qpos[0] = self.np_random.uniform(low= (-np.pi/2 + np.pi/18) * noise, high = -np.pi/2 * noise)
+        qpos[0] = self.np_random.uniform(low= -np.pi/2 * noise, high = -np.pi/2 + np.pi/18 * noise)
 
         # ulnar deviation of wrist: 
         # noise = 1 corresponds to 10 degrees on either side
