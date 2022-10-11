@@ -13,8 +13,9 @@ import warnings
 warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning) 
 
 
-task_name = sys.argv[1]
-file_name = sys.argv[2]
+task_name = "baodingBalls"
+file_name = "nondmap_baodingBalls_P1.json"
+
 config_path = os.path.join(
     ROOT_DIR,
     "configs",

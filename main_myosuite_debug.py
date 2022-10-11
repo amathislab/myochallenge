@@ -10,7 +10,7 @@ from ray.tune.logger import UnifiedLogger
 
 
 task_name = "baodingBalls"
-file_name = "sac_baodingBalls_P1.json"
+file_name = "nondmap_baodingBalls_P1.json"
 
 config_path = os.path.join(
     ROOT_DIR,
