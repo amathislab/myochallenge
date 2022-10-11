@@ -1,5 +1,5 @@
 import gym
-from ray.tune import register_env
+# from ray.tune import register_env
 
 
 class EnvironmentFactory:
@@ -36,18 +36,20 @@ class EnvironmentFactory:
             return gym.make("myoChallengeBaodingP1-v1")
         elif env_name == "CustomMyoBaodingBallsP1":
             return gym.make("CustomMyoChallengeBaodingP1-v1", **kwargs)
-                   
-    @staticmethod
-    def register(env_name, **kwargs):
-        """Registers the specified environment, so that it can be instantiated
-        by the RLLib algorithms by name.
+        elif env_name == "HistoryMyoBaodingBallsP1":
+            return gym.make("HistoryMyoChallengeBaodingP1-v1", **kwargs)
 
-        Args:
-            env_name (str): name of the environment
+    # @staticmethod
+    # def register(env_name, **kwargs):
+    #     """Registers the specified environment, so that it can be instantiated
+    #     by the RLLib algorithms by name.
 
-        Returns:
-            gym.env: the registered environment
-        """
-        env = EnvironmentFactory.create(env_name, **kwargs)
-        register_env(env_name, lambda _: EnvironmentFactory.create(env_name, **kwargs))
-        return env
+    #     Args:
+    #         env_name (str): name of the environment
+
+    #     Returns:
+    #         gym.env: the registered environment
+    #     """
+    #     env = EnvironmentFactory.create(env_name, **kwargs)
+    #     register_env(env_name, lambda _: EnvironmentFactory.create(env_name, **kwargs))
+    #     return env

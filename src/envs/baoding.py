@@ -3,8 +3,8 @@ import random
 
 import numpy as np
 from myosuite.envs.myo.base_v0 import BaseV0
-from myosuite.envs.myo.myochallenge.baoding_v1 import (WHICH_TASK,
-                                                       BaodingEnvV1, Task)
+from myosuite.envs.myo.myochallenge.baoding_v1 import WHICH_TASK, BaodingEnvV1, Task
+from src.envs.env_mixins import HistoryMixin
 
 
 class CustomBaodingEnv(BaodingEnvV1):
@@ -90,14 +90,26 @@ class CustomBaodingEnv(BaodingEnvV1):
 
     def _init_targets_with_balls(self) -> None:
         desired_angle_wrt_palm = self.goal[self.counter].copy()
-        desired_angle_wrt_palm[0] = desired_angle_wrt_palm[0] + self.ball_1_starting_angle
-        desired_angle_wrt_palm[1] = desired_angle_wrt_palm[1] + self.ball_2_starting_angle
+        desired_angle_wrt_palm[0] = (
+            desired_angle_wrt_palm[0] + self.ball_1_starting_angle
+        )
+        desired_angle_wrt_palm[1] = (
+            desired_angle_wrt_palm[1] + self.ball_2_starting_angle
+        )
 
-        desired_positions_wrt_palm = [0,0,0,0]
-        desired_positions_wrt_palm[0] = self.x_radius*np.cos(desired_angle_wrt_palm[0]) + self.center_pos[0]
-        desired_positions_wrt_palm[1] = self.y_radius*np.sin(desired_angle_wrt_palm[0]) + self.center_pos[1]
-        desired_positions_wrt_palm[2] = self.x_radius*np.cos(desired_angle_wrt_palm[1]) + self.center_pos[0]
-        desired_positions_wrt_palm[3] = self.y_radius*np.sin(desired_angle_wrt_palm[1]) + self.center_pos[1]
+        desired_positions_wrt_palm = [0, 0, 0, 0]
+        desired_positions_wrt_palm[0] = (
+            self.x_radius * np.cos(desired_angle_wrt_palm[0]) + self.center_pos[0]
+        )
+        desired_positions_wrt_palm[1] = (
+            self.y_radius * np.sin(desired_angle_wrt_palm[0]) + self.center_pos[1]
+        )
+        desired_positions_wrt_palm[2] = (
+            self.x_radius * np.cos(desired_angle_wrt_palm[1]) + self.center_pos[0]
+        )
+        desired_positions_wrt_palm[3] = (
+            self.y_radius * np.sin(desired_angle_wrt_palm[1]) + self.center_pos[1]
+        )
 
         # update both sims with desired targets
         for sim in [self.sim, self.sim_obsd]:
@@ -107,37 +119,53 @@ class CustomBaodingEnv(BaodingEnvV1):
             sim.model.site_pos[self.target2_sid, 1] = desired_positions_wrt_palm[3]
             sim.forward()
 
-    def _add_noise_to_palm_position(self, qpos: np.ndarray, noise: float = 1) -> np.ndarray:
+    def _add_noise_to_palm_position(
+        self, qpos: np.ndarray, noise: float = 1
+    ) -> np.ndarray:
         assert 0 <= noise <= 1, "Noise must be between 0 and 1"
 
         # pronation-supination of the wrist
         # noise = 1 corresponds to 10 degrees from facing up (one direction only)
-        qpos[0] = self.np_random.uniform(low= -np.pi/2, high = -np.pi/2 + np.pi/18 * noise)
+        qpos[0] = self.np_random.uniform(
+            low=-np.pi / 2, high=-np.pi / 2 + np.pi / 18 * noise
+        )
 
-        # ulnar deviation of wrist: 
+        # ulnar deviation of wrist:
         # noise = 1 corresponds to 10 degrees on either side
-        qpos[1] = self.np_random.uniform(low= -np.pi/18 * noise, high = np.pi/18 * noise)
+        qpos[1] = self.np_random.uniform(
+            low=-np.pi / 18 * noise, high=np.pi / 18 * noise
+        )
 
         # extension flexion of the wrist
         # noise = 1 corresponds to 10 degrees on either side
-        qpos[2] = self.np_random.uniform(low= -np.pi/18 * noise, high = np.pi/18 * noise)
+        qpos[2] = self.np_random.uniform(
+            low=-np.pi / 18 * noise, high=np.pi / 18 * noise
+        )
 
         return qpos
 
-    def _add_noise_to_finger_positions(self, qpos: np.ndarray, noise: float = 1) -> np.ndarray:
+    def _add_noise_to_finger_positions(
+        self, qpos: np.ndarray, noise: float = 1
+    ) -> np.ndarray:
         assert 0 <= noise <= 1, "Noise parameter must be between 0 and 1"
-        
+
         # thumb all joints
         # noise = 1 corresponds to 10 degrees on either side
-        qpos[3:7] = self.np_random.uniform(low= -np.pi/18 * noise, high = np.pi/18 * noise)
-        
+        qpos[3:7] = self.np_random.uniform(
+            low=-np.pi / 18 * noise, high=np.pi / 18 * noise
+        )
+
         # finger joints
         # noise = 1 corresponds to 30 degrees bent instead of fully open
-        qpos[[7,9,10,11,13,14,15,17,18,19,21,22]] = self.np_random.uniform(low=0, high=np.pi/6 * noise)
+        qpos[[7, 9, 10, 11, 13, 14, 15, 17, 18, 19, 21, 22]] = self.np_random.uniform(
+            low=0, high=np.pi / 6 * noise
+        )
 
         # finger abduction (sideways angle)
         # noise = 1 corresponds to 5 degrees on either side
-        qpos[[8,12,16,20]] = self.np_random.uniform(low= -np.pi/36 * noise, high= np.pi/36 * noise)
+        qpos[[8, 12, 16, 20]] = self.np_random.uniform(
+            low=-np.pi / 36 * noise, high=np.pi / 36 * noise
+        )
 
         return qpos
 
@@ -159,12 +187,12 @@ class CustomBaodingEnv(BaodingEnvV1):
         self.y_radius = self.np_random.uniform(
             low=self.goal_yrange[0], high=self.goal_yrange[1]
         )
-        
+
         # reset goal
         if time_period == None:
             time_period = self.np_random.uniform(
                 low=self.goal_time_period[0], high=self.goal_time_period[1]
-        )
+            )
         self.goal = (
             self.create_goal_trajectory(time_step=self.dt, time_period=time_period)
             if reset_goal is None
@@ -193,7 +221,7 @@ class CustomBaodingEnv(BaodingEnvV1):
 
         if self.noise_fingers:
             qpos = self._add_noise_to_finger_positions(qpos, self.noise_fingers)
-        
+
         if self.rsi or self.noise_palm or self.noise_fingers:
             self.set_state(qpos, qvel)
 
@@ -211,8 +239,8 @@ class CustomBaodingEnv(BaodingEnvV1):
         weighted_reward_keys: list = DEFAULT_RWD_KEYS_AND_WEIGHTS,
         task=None,
         enable_rsi=False,  # random state init for balls
-        noise_palm=0,      # magnitude of noise for palm (between 0 and 1)
-        noise_fingers=0,   # magnitude of noise for fingers (between 0 and 1)
+        noise_palm=0,  # magnitude of noise for palm (between 0 and 1)
+        noise_fingers=0,  # magnitude of noise for fingers (between 0 and 1)
         **kwargs
     ):
 
@@ -269,7 +297,7 @@ class CustomBaodingEnv(BaodingEnvV1):
         # reset position
         self.init_qpos[:-14] *= 0  # Use fully open as init pos
         self.init_qpos[0] = -1.57  # Palm up
-        
+
     def sample_task(self):
         if self.task is None:
             return Task(WHICH_TASK)
@@ -282,3 +310,32 @@ class CustomBaodingEnv(BaodingEnvV1):
                 return Task(random.choice(list(Task)))
             else:
                 raise ValueError("Unknown task for baoding: ", self.task)
+
+
+class HistoryBaodingEnv(CustomBaodingEnv, HistoryMixin):
+    def __init__(
+        self,
+        model_path,
+        obsd_model_path=None,
+        seed=None,
+        include_adapt_state=True,
+        num_memory_steps=30,
+        **kwargs
+    ):
+        self._init_done = False
+        super().__init__(
+            model_path, obsd_model_path=obsd_model_path, seed=seed, **kwargs
+        )
+        self.action_dim = self.sim.model.nu
+        self._init_addon(include_adapt_state, num_memory_steps)
+        self._init_done = True
+
+    def reset(self):
+        state = super().reset()
+        return self.create_rma_reset_state(state)
+    
+    def step(self, action):
+        state, reward, done, info = super().step(action)
+        if self._init_done:
+            state = self.create_rma_step_state(state, action)
+        return state, reward, done, info

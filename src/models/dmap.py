@@ -388,11 +388,11 @@ class DMAPQModel(DMAPModel):
 
     @staticmethod
     def get_space_sizes(obs_space):
-        x_prev_space = obs_space[3]  # Matrix with the states in the last 0.5 sec
+        x_prev_space = obs_space[2]  # Matrix with the states in the last 0.5 sec
         x_prev_space_size = np.prod(x_prev_space.shape)
         a_space = obs_space[1]  # Last action
         a_space_size = np.prod(a_space.shape)
-        x_space = obs_space[4]  # Current state
+        x_space = obs_space[3]  # Current state
         x_space_size = np.prod(x_space.shape)
         return x_space_size, a_space_size, x_prev_space_size
 
@@ -415,11 +415,11 @@ class DMAPQModel(DMAPModel):
 
     @staticmethod
     def get_obs_components(input_dict):
-        x_t = input_dict["obs"][4]
+        x_t = input_dict["obs"][3]
         a_t = input_dict["obs"][1]
-        x_prev = input_dict["obs"][3].reshape((x_t.shape[0], -1, x_t.shape[1]))
+        x_prev = input_dict["obs"][2].reshape((x_t.shape[0], -1, x_t.shape[1]))
         a_prev = input_dict["obs"][0].reshape((a_t.shape[0], -1, a_t.shape[1]))
-        a_next = input_dict["obs"][5]
+        a_next = input_dict["obs"][4]
         return x_t, a_t, x_prev, a_prev, a_next
 
     @property
@@ -427,29 +427,65 @@ class DMAPQModel(DMAPModel):
         return 1
 
 
-class SensoryTargetDMAPPolicyModel(DMAPPolicyModel):
-    """Policy model of Sensory-Target DMAP. The observation space to the encoder consists
-    of only proprioceptive states, but not the target information (reach_err), which is
-    incorporated as an input to each action controller.
+class NonDMAPPolicyModel(DMAPModel):
+    """Policy model of Non-Distribuited MAP. It defines one single policy network.
     """
 
+    @override(TorchModelV2)
+    def forward(self, input_dict, state, _):
+        """Applies the network on an input state dict
+
+        Args:
+            input_dict (dict): input state. It requires the structure
+            {"obs": {
+                "x_t": current state,
+                "a_t": previous action,
+                "x_prev": matrix of N previous states,
+                "a_prev": matrix of N previous actioons
+            }}
+            state (object): unused parameter, forwarded as a return value
+            _ (object): unused parameter
+
+        Returns:
+            tuple(torch.Tensor, object): (action mean and std, input state)
+        """
+        adapt_input, state_input = self.get_adapt_and_state_input(input_dict)
+        keys, values = self.get_keys_and_values(adapt_input)
+        embedding = torch.matmul(keys, values.transpose(1, 2))
+        embedding = torch.squeeze(embedding, dim=1)
+        policy_input = torch.cat((state_input, embedding), 1)
+        action = self._policy_fcnet(policy_input)
+
+        return action, state
+
+    @staticmethod
+    def get_space_sizes(obs_space):
+        x_prev_space = obs_space.original_space[
+            "x_prev"
+        ]  # Matrix with the states in the last seconds
+        x_prev_space_size = np.prod(x_prev_space.shape)
+        a_space = obs_space.original_space["a_t"]  # Last action
+        a_space_size = np.prod(a_space.shape)
+        x_space = obs_space.original_space["x_t"]  # Current state
+        x_space_size = np.prod(x_space.shape)
+        return x_space_size, a_space_size, x_prev_space_size
+
     def init_output_networks(self, hiddens):
-        for i in range(self.num_output_networks):
-            policy_layers = []
-            prev_layer_size = (
-                self.embedding_size + self.x_space_size + self.a_space_size + 3
-            )
-            for size in hiddens:
-                policy_layers.append(
-                    SlimFC(
-                        in_size=prev_layer_size,
-                        out_size=size,
-                        activation_fn=self.activation_fn,
-                    )
+        policy_layers = []
+        prev_layer_size = self.embedding_size + self.x_space_size + self.a_space_size
+        for size in hiddens:
+            policy_layers.append(
+                SlimFC(
+                    in_size=prev_layer_size,
+                    out_size=size,
+                    activation_fn=self.activation_fn,
                 )
-                prev_layer_size = size
-            policy_layers.append(nn.Linear(in_features=prev_layer_size, out_features=2))
-            setattr(self, f"_policy_fcnet_{i}", nn.Sequential(*policy_layers))
+            )
+            prev_layer_size = size
+        policy_layers.append(
+            nn.Linear(in_features=prev_layer_size, out_features=2 * self.a_space_size)
+        )
+        self._policy_fcnet = nn.Sequential(*policy_layers)
 
     @staticmethod
     def get_obs_components(input_dict):
@@ -463,7 +499,6 @@ class SensoryTargetDMAPPolicyModel(DMAPPolicyModel):
                 "a_t": previous action,
                 "x_prev": matrix of N previous states,
                 "a_prev": matrix of N previous actioons
-                "reach_err: reach error in Cartesian coordinates at the current time step
             }}
 
         Returns:
@@ -474,125 +509,57 @@ class SensoryTargetDMAPPolicyModel(DMAPPolicyModel):
         a_t = input_dict["obs"]["a_t"]
         x_prev = input_dict["obs"]["x_prev"].reshape((x_t.shape[0], -1, x_t.shape[1]))
         a_prev = input_dict["obs"]["a_prev"].reshape((a_t.shape[0], -1, a_t.shape[1]))
-        reach_err = input_dict["obs"]["reach_err"]
-        return x_t, a_t, x_prev, a_prev, None, reach_err
+        return x_t, a_t, x_prev, a_prev, None
 
-    def get_adapt_and_state_input(self, input_dict):
-        """Processes the input dict to assemble the state history and the current state
+    @property
+    def num_output_networks(self):
+        return 1
 
-        Args:
-            input_dict (dict): input state. It requires it to be compatible with the implementation
-            of get_obs_components
 
-        Returns:
-            tuple(torch.Tensor, torch.Tensor): (state history, current state)
-        """
-        x_t, a_t, x_prev, a_prev, a_next, reach_err = self.get_obs_components(
-            input_dict
+class SimpleQModel(TorchModelV2, nn.Module):
+    """Simple Q network which does not look at the past states or at the raw perturbation"""
+
+    def __init__(
+        self,
+        obs_space: gym.spaces.Space,
+        action_space: gym.spaces.Space,
+        num_outputs: int,
+        model_config: ModelConfigDict,
+        name: str,
+    ):
+        assert num_outputs == 1
+        TorchModelV2.__init__(
+            self, obs_space, action_space, num_outputs, model_config, name
         )
-        adapt_input = (
-            torch.cat((x_prev, a_prev), 2)
-            .transpose(1, 2)
-            .reshape(np.prod(x_t.shape) + np.prod(a_t.shape), 1, -1)
-        )
-        if a_next is None:
-            state_input = torch.cat((reach_err, x_t, a_t), 1)
-        else:
-            state_input = torch.cat((reach_err, x_t, a_t, a_next), 1)
-        return adapt_input, state_input
+        nn.Module.__init__(self)
+        activation_fn = model_config["fcnet_activation"]
+        fcnet_hiddens = model_config["fcnet_hiddens"]
+        a_space = obs_space[1]  # Last action
+        self.a_space_size = np.prod(a_space.shape)
+        x_space = obs_space[3]  # Current state
+        self.x_space_size = np.prod(x_space.shape)
 
+        # Define the fcnet
+        prev_layer_size = 2 * self.a_space_size + self.x_space_size
+        q_layers = []
+        for size in fcnet_hiddens:
+            linear_layer = nn.Linear(prev_layer_size, size)
+            q_layers.append(linear_layer)
+            activation = get_activation_fn(activation_fn, framework="torch")
+            q_layers.append(activation())
+            prev_layer_size = size
+        q_layers.append(nn.Linear(in_features=prev_layer_size, out_features=1))
+        self._q_fcnet = nn.Sequential(*q_layers)
 
-class DecisionDMAPPolicyModel(DMAPPolicyModel):
-    """Policy model of Decision Transformer-DMAP. The observation space only consists of the
-    joint position and joint velocity. The tip position, reach error, and predicted action
-    are included as input to each action controller.
-    """
+    @override(TorchModelV2)
+    def forward(self, input_dict, state, seq_len):
+        state_input = self.get_state_input(input_dict)
+        q_value = self._q_fcnet(state_input)
+        return q_value, state
 
-    def init_output_networks(self, hiddens):
-        """The input to each action controller consists of
-        one embedding vector (self.embedding_size),
-        the transition history (self.x_space_size + self.a_space_size),
-        the tip position (self.tip_pos_size),
-        the reach error (self.reach_err_size),
-        and the next action predicted by decision transformer (self.a_space_size).
-        """
-        for i in range(self.num_output_networks):
-            policy_layers = []
-            prev_layer_size = (
-                self.embedding_size + self.x_space_size + 2 * self.a_space_size + 6
-            )
-            for size in hiddens:
-                policy_layers.append(
-                    SlimFC(
-                        in_size=prev_layer_size,
-                        out_size=size,
-                        activation_fn=self.activation_fn,
-                    )
-                )
-                prev_layer_size = size
-            policy_layers.append(nn.Linear(in_features=prev_layer_size, out_features=2))
-            setattr(self, f"_policy_fcnet_{i}", nn.Sequential(*policy_layers))
-
-    @staticmethod
-    def get_obs_components(input_dict):
-        """Processes the input dict to return the current state, the previous action and the
-        history of states and actions
-
-        Args:
-            input_dict (dict): input state. It requires the structure
-            {"obs": {
-                "x_t": current state,
-                "a_t": previous action,
-                "x_prev": matrix of N previous states,
-                "a_prev": matrix of N previous actions,
-                "r_prev": matrix of N previous rewards,
-                "tip_pos": current tip position,
-                "reach_err": current reach error,
-                "a_pred_next": next action predicted by decision transformer
-            }}
-
-        Returns:
-            tuple(torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor):
-            (current state, previous action, state history, action history)
-        """
-        x_t = input_dict["obs"]["x_t"]
-        a_t = input_dict["obs"]["a_t"]
-        x_prev = input_dict["obs"]["x_prev"].reshape((x_t.shape[0], -1, x_t.shape[1]))
-        a_prev = input_dict["obs"]["a_prev"].reshape((a_t.shape[0], -1, a_t.shape[1]))
-        tip_pos = input_dict["obs"]["tip_pos"]
-        reach_err = input_dict["obs"]["reach_err"]
-        a_pred_next = input_dict["obs"]["a_pred_next"]
-        return x_t, a_t, x_prev, a_prev, None, tip_pos, reach_err, a_pred_next
-
-    def get_adapt_and_state_input(self, input_dict):
-        """Processes the input dict to assemble the state history and the current state
-
-        Args:
-            input_dict (dict): input state. It requires it to be compatible with the implementation
-            of get_obs_components
-
-        Returns:
-            tuple(torch.Tensor, torch.Tensor): (state history, current state)
-        """
-        (
-            x_t,
-            a_t,
-            x_prev,
-            a_prev,
-            a_next,
-            tip_pos,
-            reach_err,
-            a_pred_next,
-        ) = self.get_obs_components(input_dict)
-        adapt_input = (
-            torch.cat((x_prev, a_prev), 2)
-            .transpose(1, 2)
-            .reshape(np.prod(x_t.shape) + np.prod(a_t.shape), 1, -1)
-        )
-        if a_next is None:
-            state_input = torch.cat((tip_pos, reach_err, x_t, a_t, a_pred_next), 1)
-        else:
-            state_input = torch.cat(
-                (tip_pos, reach_err, x_t, a_t, a_next, a_pred_next), 1
-            )
-        return adapt_input, state_input
+    def get_state_input(self, input_dict):
+        x_t = input_dict["obs"][3]
+        a_t = input_dict["obs"][1]
+        a_next = input_dict["obs"][4]
+        state_input = torch.cat((x_t, a_t, a_next), 1)
+        return state_input

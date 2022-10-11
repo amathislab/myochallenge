@@ -49,7 +49,7 @@ class HistoryMixin:
             x_t (np.array): current state
 
         Returns:
-            dict: {"x_t": state, "a_t": action, "e_t": raw_perturbation,
+            dict: {"x_t": state, "a_t": action,
             "a_prev": action_history, "x_prev": state_history}
         """
         a_t = np.zeros(self.action_dim)
