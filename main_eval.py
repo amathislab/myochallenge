@@ -10,29 +10,40 @@ from src.envs.environment_factory import EnvironmentFactory
 env_name = "CustomMyoBaodingBallsP1"
 
 # Path to normalized Vectorized environment (if not first task)
-# PATH_TO_NORMALIZED_ENV = "output/training/2022-09-23_12-16-54/training_env.pkl"  # "trained_models/normalized_env_original"
-PATH_TO_NORMALIZED_ENV = "output/training/2022-09-26/22-57-51/training_env.pkl"  # "trained_models/normalized_env_original"
-
+# PATH_TO_NORMALIZED_ENV = "trained_models/env_final_period4to6.pkl"  # "trained_models/normalized_env_original"
+# PATH_TO_NORMALIZED_ENV = "output/training/2022-10-04/17-20-31_final_task_with_noise_reg_ccw/training_env.pkl"  # "trained_models/normalized_env_original"
+# PATH_TO_NORMALIZED_ENV = "output/training/2022-10-04/16-11-36_fully_trained_ccw_to_random_direction/training_env.pkl"  # "trained_models/normalized_env_original"
+# PATH_TO_NORMALIZED_ENV = "output/training/2022-10-04/17-21-03_final_task_with_noise_reg_random/training_env.pkl"  # "trained_models/normalized_env_original"
+# PATH_TO_NORMALIZED_ENV = "output/training/2022-10-04/16-10-18_final_task_ccw_no_hand_noise/training_env.pkl"  # "trained_models/normalized_env_original"
+PATH_TO_NORMALIZED_ENV = "trained_models/env_rsi_static_perfect.pkl"  # "trained_models/normalized_env_original"
 
 # Path to pretrained network (if not first task)
-# PATH_TO_PRETRAINED_NET = "output/training/2022-09-23_12-16-54/best_model.zip"  # "trained_models/best_model.zip"
-PATH_TO_PRETRAINED_NET = "output/training/2022-09-26/22-57-51/best_model.zip"  # "trained_models/best_model.zip"
+# PATH_TO_PRETRAINED_NET = "trained_models/final_period4to6.zip"  # "trained_models/best_model.zip"
+# PATH_TO_PRETRAINED_NET = "output/training/2022-10-04/17-20-31_final_task_with_noise_reg_ccw/best_model.zip"  # "trained_models/best_model.zip"
+# PATH_TO_PRETRAINED_NET = "output/training/2022-10-04/16-11-36_fully_trained_ccw_to_random_direction/best_model.zip"  # "trained_models/best_model.zip"
+# PATH_TO_PRETRAINED_NET = "output/training/2022-10-04/17-21-03_final_task_with_noise_reg_random/best_model.zip"  # "trained_models/best_model.zip"
+# PATH_TO_PRETRAINED_NET = "output/training/2022-10-04/16-10-18_final_task_ccw_no_hand_noise/best_model.zip"  # "trained_models/best_model.zip"
+PATH_TO_PRETRAINED_NET = "trained_models/rsi_static_perfect.zip"  # "trained_models/best_model.zip"
 
 # Reward structure and task parameters:
 config = {
     "weighted_reward_keys": {
-        "pos_dist_1": 0,
-        "pos_dist_2": 0,
+        "pos_dist_1": 1,
+        "pos_dist_2": 1,
         "act_reg": 0,
         "alive": 0,
-        "solved": 5,
+        "solved": 0,
         "done": 0,
         "sparse": 0,
     },
-    "goal_time_period": [10, 10],
-    "task": "random",
-    "enable_rhi": False,
-    "enable_rsi": False
+    "task": "ccw",
+    "enable_rsi": True,
+    "noise_palm": 0,
+    "noise_fingers": 0,
+    "goal_time_period": [1e6, 1e6],   # phase 2: (4, 6)
+    "goal_xrange": (0.025, 0.025),  # phase 2: (0.020, 0.030)
+    "goal_yrange": (0.028, 0.028),  # phase 2: (0.022, 0.032)
+    "drop_th": 1.3,
 }
 
 
@@ -55,12 +66,22 @@ if __name__ == "__main__":
     envs = VecNormalize.load(PATH_TO_NORMALIZED_ENV, envs)
 
     # Create model (hyperparameters from RL Zoo HalfCheetak)
-    model = RecurrentPPO.load(PATH_TO_PRETRAINED_NET, env=envs)
+    custom_objects = {
+        "learning_rate": 0.0,
+        "lr_schedule": lambda _: 0.0,
+        "clip_range": lambda _: 0.0,
+        # "_last_lstm_states": None
+    }
+
+    model = RecurrentPPO.load(PATH_TO_PRETRAINED_NET, env=envs, custom_objects=custom_objects)
 
     # EVALUATE
     eval_model = model
-    eval_env = EnvironmentFactory.create(env_name, **config)
-
+    # eval_env = EnvironmentFactory.create(env_name, **config)
+    
+    import gym
+    eval_env = gym.make("myoChallengeBaodingP1-v1")
+    
     # Enjoy trained agent
     num_episodes = 10
     perfs = []
@@ -73,7 +94,7 @@ if __name__ == "__main__":
         episode_starts = np.ones((1,), dtype=bool)
         done = False
         while not done:
-            eval_env.sim.render(mode="window")
+            # eval_env.sim.render(mode="window")
             action, lstm_states = eval_model.predict(
                 envs.normalize_obs(obs),
                 state=lstm_states,

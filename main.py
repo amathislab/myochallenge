@@ -23,13 +23,13 @@ env_name = "CustomMyoBaodingBallsP1"
 FIRST_TASK = False
 
 # Path to normalized Vectorized environment (if not first task)
-PATH_TO_NORMALIZED_ENV = "trained_models/normalized_env_rsi_static"  # "trained_models/normalized_env_original"
+PATH_TO_NORMALIZED_ENV = "trained_models/env_rsi_static_perfect.pkl"  # "trained_models/normalized_env_original"
 
 # Path to pretrained network (if not first task)
-PATH_TO_PRETRAINED_NET = "trained_models/rsi_static.zip"  # "trained_models/best_model.zip"
+PATH_TO_PRETRAINED_NET = "trained_models/rsi_static_perfect.zip"  # "trained_models/best_model.zip"
 
 # Tensorboard log (will save best model during evaluation)
-now = datetime.now().strftime("%Y-%m-%d/%H-%M-%S")
+now = datetime.now().strftime("%Y-%m-%d/%H-%M-%S") + "_cw_rsi_15_20"
 TENSORBOARD_LOG = os.path.join("output", "training", now)
 
 
@@ -38,7 +38,7 @@ config = {
     "weighted_reward_keys": {
         "pos_dist_1": 1,
         "pos_dist_2": 1,
-        "act_reg": 0.1,
+        "act_reg": 0,
         "alive": 1,
         "solved": 5,
         "done": 0,
@@ -47,10 +47,10 @@ config = {
     "task": "cw",
     "enable_rsi": True,
     "noise_palm": 0.1,
-    "noise_fingers": 0.1,
-    "goal_time_period": [20, 25],   # phase 2: (4, 6)
-    "goal_xrange": (0.025, 0.025),  # phase 2: (0.020, 0.030)
-    "goal_yrange": (0.028, 0.028),  # phase 2: (0.022, 0.032)
+    "noise_fingers": 0.2,
+    "goal_time_period": [15, 20],   # phase 2: (4, 6)
+    "goal_xrange": (0.24, 0.026),  # phase 2: (0.020, 0.030)
+    "goal_yrange": (0.027, 0.029),  # phase 2: (0.022, 0.032)
     "drop_th": 1.3,
 }
 
@@ -58,7 +58,7 @@ config = {
 def make_parallel_envs(env_name, env_config, num_env, start_index=0):
     def make_env(rank):
         def _thunk():
-            env = EnvironmentFactory.register(env_name, **env_config)
+            env = EnvironmentFactory.create(env_name, **env_config)
             env = Monitor(env, TENSORBOARD_LOG)
             return env
 
@@ -118,8 +118,8 @@ if __name__ == "__main__":
         'done': 0,
         'sparse': 0})
 
-    env_score = EnvironmentFactory.register(env_name, **config_score)
-    env_effort = EnvironmentFactory.register(env_name, **config_effort)
+    env_score = EnvironmentFactory.create(env_name, **config_score)
+    env_effort = EnvironmentFactory.create(env_name, **config_effort)
 
     score_callback = EvaluateLSTM(eval_freq = 5000, eval_env = env_score, name = 'eval/score', num_episodes=10)
     effort_callback = EvaluateLSTM(eval_freq = 5000, eval_env = env_effort, name = 'eval/effort', num_episodes=10)
@@ -139,7 +139,6 @@ if __name__ == "__main__":
             ent_coef= 3e-6,
             learning_rate=2e-5,
             clip_range=0.25,
-            n_epochs=10,
             use_sde=True,
             max_grad_norm=0.8,
             vf_coef=0.5,
@@ -162,5 +161,5 @@ if __name__ == "__main__":
         total_timesteps=10_000_000, callback=[eval_callback,score_callback,effort_callback], reset_num_timesteps=True
     )
 
-    model.save("rsi_static_TO_cw_20to25_rsi_no_rhi")
-    envs.save('normalized_env_rsi_static_TO_cw_20to25_rsi_no_rhi')
+    model.save(os.path.join(TENSORBOARD_LOG, "final_model.pkl"))
+    envs.save(os.path.join(TENSORBOARD_LOG, "final_env.pkl"))
