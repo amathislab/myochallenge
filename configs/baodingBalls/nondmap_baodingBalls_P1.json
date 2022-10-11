@@ -1,0 +1,115 @@
+{
+    "env_name": "HistoryMyoBaodingBallsP1",
+    "env_config": {
+        "weighted_reward_keys": {
+            "pos_dist_1": 1,
+            "pos_dist_2": 1,
+            "act_reg": 0,
+            "alive": 1,
+            "solved": 5,
+            "done": 0,
+            "sparse": 0
+        },
+        "task": "random",
+        "enable_rsi": false,
+        "noise_palm": 0.1,
+        "noise_fingers": 0.1,
+        "goal_time_period": [
+            4,
+            6
+        ],
+        "goal_xrange": [
+            0.020,
+            0.030
+        ],
+        "goal_yrange": [
+            0.024,
+            0.032
+        ],
+        "drop_th": 1.25
+    },
+    "num_trainer_workers": 19,
+    "policies_to_train": {
+        "policy": true
+    },
+    "policy_classes": {
+        "policy": "sac"
+    },
+    "policy_configs": {
+        "policy": {
+            "policy_model": {
+                "custom_model": "nondmap_policy",
+                "fcnet_activation": "relu",
+                "feature_convnet_params": [
+                    {
+                        "num_filters": 32,
+                        "kernel_size": 5,
+                        "stride": 4
+                    },
+                    {
+                        "num_filters": 32,
+                        "kernel_size": 3,
+                        "stride": 1
+                    },
+                    {
+                        "num_filters": 32,
+                        "kernel_size": 3,
+                        "stride": 1
+                    }
+                ],
+                "feature_fcnet_hiddens": [
+                    32,
+                    32
+                ],
+                "policy_hiddens": [
+                    64,
+                    64
+                ],
+                "embedding_size": 16
+            },
+            "Q_model": {
+                "custom_model": "simple_q",
+                "fcnet_activation": "relu",
+                "q_hiddens": [
+                    256,
+                    256
+                ]
+            },
+            "normalize_actions": true,
+            "no_done_at_end": false,
+            "n_step": 10,
+            "timesteps_per_iteration": 10000,
+            "prioritized_replay": true,
+            "buffer_size": 100000,
+            "optimization": {
+                "actor_learning_rate": 3e-4,
+                "critic_learning_rate": 3e-4,
+                "entropy_learning_rate": 3e-4
+            },
+            "grad_clip": null,
+            "learning_starts": 50000,
+            "target_network_update_freq": 10,
+            "worker_side_prioritization": false,
+            "min_iter_time_s": 1
+        }
+    },
+    "agent_policy_dict": {
+        "agent": "policy"
+    },
+    "gamma": 0.995,
+    "rollout_fragment_length": 1,
+    "train_batch_size": 256,
+    "lr": 1e-4,
+    "num_gpus": 0,
+    "extra_trainer_params": {
+        "framework": "torch",
+        "seed": 0
+    },
+    "callbacks": "MyoInfoCallbacks",
+    "trainer_class": "sac",
+    "episodes_total": 1e7,
+    "logdir": "output",
+    "trial_name": "dmap_baoding_balls_period_4_6_random_direction",
+    "checkpoint_freq": 100,
+    "restore_checkpoint_path": null
+}
