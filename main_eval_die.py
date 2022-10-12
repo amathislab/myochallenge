@@ -8,55 +8,36 @@ from main import PATH_TO_PRETRAINED_NET
 
 from src.envs.environment_factory import EnvironmentFactory
 
-env_name = "CustomMyoBaodingBallsP1"
+env_name = "CustomMyoReorientP1"
 
 # Path to normalized Vectorized environment (if not first task)
 # PATH_TO_NORMALIZED_ENV = "output/training/2022-09-23_12-16-54/training_env.pkl"  # "trained_models/normalized_env_original"
-PATH_TO_NORMALIZED_ENV = "trained_models/env_rsi_static_perfect.pkl"  # "trained_models/normalized_env_original"
+PATH_TO_NORMALIZED_ENV = "output/training/2022-10-12/10-17-56_die_orient_random_pos_0_01_rot_0_1/training_env.pkl"
 
 
 # Path to pretrained network (if not first task)
 # PATH_TO_PRETRAINED_NET = "output/training/2022-09-23_12-16-54/best_model.zip"  # "trained_models/best_model.zip"
 PATH_TO_PRETRAINED_NET = (
-    "trained_models/rsi_static_perfect.zip"  # "trained_models/best_model.zip"
+    "output/training/2022-10-12/10-17-56_die_orient_random_pos_0_01_rot_0_1/best_model.zip"
 )
 
 # Reward structure and task parameters:
 config = {
     "weighted_reward_keys": {
-        "pos_dist_1": 0,
-        "pos_dist_2": 0,
+        "pos_dist": 0,
+        "rot_dist": 0,
         "act_reg": 0,
         "alive": 0,
         "solved": 5,
         "done": 0,
         "sparse": 0,
     },
-    "task": "ccw",
-    "enable_rsi": True,
-    "noise_palm": 0,
-    "noise_fingers": 0,
-    "goal_time_period": [1e6, 1e6],   # phase 2: (4, 6)
-    "goal_xrange": (0.025, 0.025),  # phase 2: (0.020, 0.030)
-    "goal_yrange": (0.028, 0.028),  # phase 2: (0.022, 0.032)
-    "drop_th": 1.3,
+    # "noise_palm": 0.1,
+    # "noise_fingers": 0.1,
+    "goal_pos": (-0.01, 0.01),  # phase 2: (-0.020, 0.020)
+    "goal_rot": (-0.3, 0.3),  # phase 2: (-3.14, 3.14)
+    "drop_th": 0.2,
 }
-# config = {
-#     "weighted_reward_keys": {
-#         "pos_dist_1": 0,
-#         "pos_dist_2": 0,
-#         "act_reg": 0,
-#         "alive": 0,
-#         "solved": 5,
-#         "done": 0,
-#         "sparse": 0,
-#     },
-#     "goal_time_period": [1e100, 1e100],
-#     "task": "cw",
-#     "enable_rhi": False,
-#     "enable_rsi": True,
-# }
-
 
 # Function that creates and monitors vectorized environments:
 def make_parallel_envs(env_name, env_config, num_env, start_index=0):
