@@ -193,8 +193,8 @@ class CustomBaodingEnv(BaodingEnvV1):
             # update balls x,y,z positions with relative noise
             for i in [23,24,25,30,31,32]:
                 qpos[i] += np.random.uniform(
-                    low = -qpos[i]/self.noise_balls,
-                    high = qpos[i]/self.noise_balls) 
+                    low = -self.noise_balls,
+                    high = self.noise_balls) 
 
         if self.noise_palm:
             qpos = self._add_noise_to_palm_position(qpos, self.noise_palm)
