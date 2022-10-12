@@ -174,7 +174,6 @@ class CustomBaodingEnv(BaodingEnvV1):
         # reset scene (MODIFIED from base class MujocoEnv)
         qpos = self.init_qpos.copy() if reset_pose is None else reset_pose
         qvel = self.init_qvel.copy() if reset_vel is None else reset_vel
-        print(qpos)
         self.robot.reset(qpos, qvel)
 
         if self.rsi:
