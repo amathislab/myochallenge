@@ -85,7 +85,7 @@ if __name__ == "__main__":
     eval_env = EnvironmentFactory.create(env_name, **config)
 
     # Enjoy trained agent
-    num_episodes = 100
+    num_episodes = 1
     perfs = []
     lens = []
     for i in range(num_episodes):
@@ -110,4 +110,5 @@ if __name__ == "__main__":
         lens.append(step)
         perfs.append(cum_rew)
         print("Episode", i, ", len:", step, ", cum rew: ", cum_rew)
+        print(info)
     print(("Average len:", np.mean(lens), "     ", "Average rew:", np.mean(perfs)))
