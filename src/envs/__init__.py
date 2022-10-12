@@ -22,3 +22,16 @@ gym.envs.registration.register(
         "goal_yrange": (0.028, 0.028),
     },
 )
+
+# MyoChallenge Die: Phase1 env
+gym.envs.registration.register(id='CustomMyoChallengeDieReorientP1-v0',
+        entry_point='src.envs.reorient:CustomReorientEnv',
+        max_episode_steps=150,
+        kwargs={
+            'model_path': myosuite_path + '/assets/hand/myo_hand_die.mjb',
+            'normalize_act': True,
+            'frame_skip': 5,
+            'goal_pos': (-.010, .010),  # +- 1 cm
+            'goal_rot': (-1.57, 1.57)   # +-90 degrees
+        }
+    )
