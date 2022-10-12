@@ -12,20 +12,14 @@ env_name = "CustomMyoBaodingBallsP1"
 
 # Path to normalized Vectorized environment (if not first task)
 # PATH_TO_NORMALIZED_ENV = "output/training/2022-09-23_12-16-54/training_env.pkl"  # "trained_models/normalized_env_original"
-# PATH_TO_NORMALIZED_ENV = "output/training/2022-09-26/22-57-51/training_env.pkl"  # "trained_models/normalized_env_original"
-PATH_TO_NORMALIZED_ENV = "trained_models/env_rsi_static_perfect.pkl"
-# PATH_TO_NORMALIZED_ENV = "trained_models/normalized_env_phase1_final"
-# PATH_TO_NORMALIZED_ENV = "trained_models/env_final_period4to6.pkl"
-# PATH_TO_NORMALIZED_ENV = "trained_models/env_cw_period4to6_noRHI_noRadius.pkl"
+PATH_TO_NORMALIZED_ENV = "trained_models/env_rsi_static_perfect.pkl"  # "trained_models/normalized_env_original"
 
 
 # Path to pretrained network (if not first task)
 # PATH_TO_PRETRAINED_NET = "output/training/2022-09-23_12-16-54/best_model.zip"  # "trained_models/best_model.zip"
-# PATH_TO_PRETRAINED_NET = "output/training/2022-09-26/22-57-51/best_model.zip"  # "trained_models/best_model.zip"
-PATH_TO_PRETRAINED_NET = "trained_models/rsi_static_perfect.zip"
-# PATH_TO_PRETRAINED_NET = "trained_models/phase1_final.zip"
-# PATH_TO_PRETRAINED_NET = "trained_models/final_period4to6.zip"
-# PATH_TO_PRETRAINED_NET = "trained_models/cw_period4to6_noRHI_noRadius.zip"
+PATH_TO_PRETRAINED_NET = (
+    "trained_models/rsi_static_perfect.zip"  # "trained_models/best_model.zip"
+)
 
 # Reward structure and task parameters:
 config = {
@@ -75,6 +69,7 @@ def make_parallel_envs(env_name, env_config, num_env, start_index=0):
 
     return SubprocVecEnv([make_env(i + start_index) for i in range(num_env)])
 
+
 if __name__ == "__main__":
     # Create vectorized environments:
     envs = make_parallel_envs(env_name, config, num_env=16)
@@ -90,7 +85,7 @@ if __name__ == "__main__":
     eval_env = EnvironmentFactory.create(env_name, **config)
 
     # Enjoy trained agent
-    num_episodes = 10
+    num_episodes = 100
     perfs = []
     lens = []
     for i in range(num_episodes):
