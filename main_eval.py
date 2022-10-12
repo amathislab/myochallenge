@@ -4,6 +4,7 @@ from stable_baselines3.common.callbacks import EvalCallback
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import VecNormalize
 from stable_baselines3.common.vec_env.subproc_vec_env import SubprocVecEnv
+from main import PATH_TO_PRETRAINED_NET
 
 from src.envs.environment_factory import EnvironmentFactory
 
@@ -11,12 +12,20 @@ env_name = "CustomMyoBaodingBallsP1"
 
 # Path to normalized Vectorized environment (if not first task)
 # PATH_TO_NORMALIZED_ENV = "output/training/2022-09-23_12-16-54/training_env.pkl"  # "trained_models/normalized_env_original"
-PATH_TO_NORMALIZED_ENV = "output/training/2022-09-26/22-57-51/training_env.pkl"  # "trained_models/normalized_env_original"
+# PATH_TO_NORMALIZED_ENV = "output/training/2022-09-26/22-57-51/training_env.pkl"  # "trained_models/normalized_env_original"
+PATH_TO_NORMALIZED_ENV = "trained_models/env_rsi_static_perfect.pkl"
+# PATH_TO_NORMALIZED_ENV = "trained_models/normalized_env_phase1_final"
+# PATH_TO_NORMALIZED_ENV = "trained_models/env_final_period4to6.pkl"
+# PATH_TO_NORMALIZED_ENV = "trained_models/env_cw_period4to6_noRHI_noRadius.pkl"
 
 
 # Path to pretrained network (if not first task)
 # PATH_TO_PRETRAINED_NET = "output/training/2022-09-23_12-16-54/best_model.zip"  # "trained_models/best_model.zip"
-PATH_TO_PRETRAINED_NET = "output/training/2022-09-26/22-57-51/best_model.zip"  # "trained_models/best_model.zip"
+# PATH_TO_PRETRAINED_NET = "output/training/2022-09-26/22-57-51/best_model.zip"  # "trained_models/best_model.zip"
+PATH_TO_PRETRAINED_NET = "trained_models/rsi_static_perfect.zip"
+# PATH_TO_PRETRAINED_NET = "trained_models/phase1_final.zip"
+# PATH_TO_PRETRAINED_NET = "trained_models/final_period4to6.zip"
+# PATH_TO_PRETRAINED_NET = "trained_models/cw_period4to6_noRHI_noRadius.zip"
 
 # Reward structure and task parameters:
 config = {
@@ -29,11 +38,30 @@ config = {
         "done": 0,
         "sparse": 0,
     },
-    "goal_time_period": [10, 10],
-    "task": "random",
-    "enable_rhi": False,
-    "enable_rsi": False
+    "task": "ccw",
+    "enable_rsi": True,
+    "noise_palm": 0,
+    "noise_fingers": 0,
+    "goal_time_period": [1e6, 1e6],   # phase 2: (4, 6)
+    "goal_xrange": (0.025, 0.025),  # phase 2: (0.020, 0.030)
+    "goal_yrange": (0.028, 0.028),  # phase 2: (0.022, 0.032)
+    "drop_th": 1.3,
 }
+# config = {
+#     "weighted_reward_keys": {
+#         "pos_dist_1": 0,
+#         "pos_dist_2": 0,
+#         "act_reg": 0,
+#         "alive": 0,
+#         "solved": 5,
+#         "done": 0,
+#         "sparse": 0,
+#     },
+#     "goal_time_period": [1e100, 1e100],
+#     "task": "cw",
+#     "enable_rhi": False,
+#     "enable_rsi": True,
+# }
 
 
 # Function that creates and monitors vectorized environments:
@@ -73,7 +101,7 @@ if __name__ == "__main__":
         episode_starts = np.ones((1,), dtype=bool)
         done = False
         while not done:
-            eval_env.sim.render(mode="window")
+            # eval_env.sim.render(mode="window")
             action, lstm_states = eval_model.predict(
                 envs.normalize_obs(obs),
                 state=lstm_states,
