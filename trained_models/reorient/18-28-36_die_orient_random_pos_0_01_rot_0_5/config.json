@@ -1,0 +1,1 @@
+{"weighted_reward_keys": {"pos_dist": 1, "rot_dist": 1, "act_reg": 0, "alive": 1, "solved": 5, "done": 0, "sparse": 0}, "goal_pos": [-0.01, 0.01], "goal_rot": [-0.5, 0.5], "drop_th": 0.2}
