@@ -24,10 +24,10 @@ PATH_TO_PRETRAINED_NET = (
 # Reward structure and task parameters:
 config = {
     "weighted_reward_keys": {
-        "pos_dist": 0,
-        "rot_dist": 0,
+        "pos_dist": 1,
+        "rot_dist": 1,
         "act_reg": 0,
-        "alive": 0,
+        "alive": 1,
         "solved": 5,
         "done": 0,
         "sparse": 0,
@@ -37,7 +37,9 @@ config = {
     "goal_pos": (-0.02, 0.02),  # phase 2: (-0.020, 0.020)
     "goal_rot": (-3.14, 3.14),  # phase 2: (-3.14, 3.14)
     "drop_th": 0.2,
-    "enable_rsi": True
+    "enable_rsi": True,
+    "rsi_distance_pos":0.8,
+    "rsi_distance_rot":0.8,
 }
 
 # Function that creates and monitors vectorized environments:

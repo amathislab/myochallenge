@@ -47,6 +47,8 @@ class CustomReorientEnv(ReorientEnvV0):
             rot_th = 0.262,             # rotation error threshold
             drop_th = .200,             # drop height threshold
             enable_rsi = False,
+            rsi_distance_pos = 0,
+            rsi_distance_rot = 0,
             **kwargs,
         ):
 
@@ -62,6 +64,8 @@ class CustomReorientEnv(ReorientEnvV0):
         self.rot_th = rot_th
         self.drop_th = drop_th
         self.rsi = enable_rsi
+        self.rsi_distance_pos = rsi_distance_pos
+        self.rsi_distance_rot = rsi_distance_rot
 
         BaseV0._setup(self,obs_keys=obs_keys,
                     weighted_reward_keys=weighted_reward_keys,
@@ -78,14 +82,26 @@ class CustomReorientEnv(ReorientEnvV0):
             euler2quat(self.np_random.uniform( high=self.goal_rot[1], low=self.goal_rot[0], size=3))
         
 
+        default_init_pos = np.array([-0.24, -0.535, 1.46 ])
+        default_init_rot = np.array([1., 0., 0., 0.])
+
         if self.rsi:
+
             self.object_bid = self.sim.model.body_name2id("Object")
             qpos = self.init_qpos.copy() if reset_qpos is None else reset_qpos
             qvel = self.init_qvel.copy() if reset_qvel is None else reset_qvel
-            self.sim.model.body_pos[self.object_bid] = self.sim.model.body_pos[self.goal_bid].copy()
-            self.sim.model.body_quat[self.object_bid] = self.sim.model.body_quat[self.goal_bid].copy()
-            self.sim.model.body_pos[self.object_bid] -= self.goal_obj_offset
+
+            self.sim.model.body_pos[self.object_bid] = \
+                self.rsi_distance_pos * default_init_pos + \
+                (1-self.rsi_distance_pos) * np.array(
+                    self.sim.model.body_pos[self.goal_bid].copy() -  self.goal_obj_offset)
+
+            self.sim.model.body_quat[self.object_bid] = \
+                self.rsi_distance_rot * default_init_rot + \
+                (1-self.rsi_distance_rot) * np.array(self.sim.model.body_quat[self.goal_bid].copy())
+
             self.robot.reset(qpos, qvel)
+
             return self.get_obs()
 
         else:
