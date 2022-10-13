@@ -4,21 +4,21 @@ from stable_baselines3.common.callbacks import EvalCallback
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import VecNormalize
 from stable_baselines3.common.vec_env.subproc_vec_env import SubprocVecEnv
-from main import PATH_TO_PRETRAINED_NET
 
+from main import PATH_TO_PRETRAINED_NET
 from src.envs.environment_factory import EnvironmentFactory
 
 env_name = "CustomMyoReorientP1"
 
 # Path to normalized Vectorized environment (if not first task)
 # PATH_TO_NORMALIZED_ENV = "output/training/2022-09-23_12-16-54/training_env.pkl"  # "trained_models/normalized_env_original"
-PATH_TO_NORMALIZED_ENV = "output/training/2022-10-12/10-17-56_die_orient_random_pos_0_01_rot_0_1/training_env.pkl"
+PATH_TO_NORMALIZED_ENV = "trained_models/reorient/19-10-08_die_orient_random_pos_0_003_rot_0_1/training_env.pkl"
 
 
 # Path to pretrained network (if not first task)
 # PATH_TO_PRETRAINED_NET = "output/training/2022-09-23_12-16-54/best_model.zip"  # "trained_models/best_model.zip"
 PATH_TO_PRETRAINED_NET = (
-    "output/training/2022-10-12/10-17-56_die_orient_random_pos_0_01_rot_0_1/best_model.zip"
+    "trained_models/reorient/19-10-08_die_orient_random_pos_0_003_rot_0_1/best_model.zip"
 )
 
 # Reward structure and task parameters:
@@ -34,9 +34,10 @@ config = {
     },
     # "noise_palm": 0.1,
     # "noise_fingers": 0.1,
-    "goal_pos": (-0.01, 0.01),  # phase 2: (-0.020, 0.020)
-    "goal_rot": (-0.3, 0.3),  # phase 2: (-3.14, 3.14)
+    "goal_pos": (-0.02, 0.02),  # phase 2: (-0.020, 0.020)
+    "goal_rot": (-3.14, 3.14),  # phase 2: (-3.14, 3.14)
     "drop_th": 0.2,
+    "enable_rsi": True
 }
 
 # Function that creates and monitors vectorized environments:
@@ -77,7 +78,7 @@ if __name__ == "__main__":
         episode_starts = np.ones((1,), dtype=bool)
         done = False
         while not done:
-            # eval_env.sim.render(mode="window")
+            eval_env.sim.render(mode="window")
             action, lstm_states = eval_model.predict(
                 envs.normalize_obs(obs),
                 state=lstm_states,
