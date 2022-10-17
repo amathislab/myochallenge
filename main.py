@@ -23,10 +23,10 @@ env_name = "CustomMyoBaodingBallsP1"
 FIRST_TASK = False
 
 # Path to normalized Vectorized environment (if not first task)
-PATH_TO_NORMALIZED_ENV = "trained_models/env_rsi_static_perfect.pkl"  # "trained_models/normalized_env_original"
+PATH_TO_NORMALIZED_ENV = "output/training/2022-10-12/09-45-20/training_env.pkl"  # "trained_models/normalized_env_original"
 
 # Path to pretrained network (if not first task)
-PATH_TO_PRETRAINED_NET = "trained_models/rsi_static_perfect.zip"  # "trained_models/best_model.zip"
+PATH_TO_PRETRAINED_NET = "output/training/2022-10-12/09-45-20/best_model.zip"  # "trained_models/best_model.zip"
 
 # Tensorboard log (will save best model during evaluation)
 now = datetime.now().strftime("%Y-%m-%d/%H-%M-%S") + "_random_20_25_rsi_noise"
@@ -38,19 +38,20 @@ config = {
     "weighted_reward_keys": {
         "pos_dist_1": 1,
         "pos_dist_2": 1,
-        "act_reg": 0,
+        "act_reg": 0.2,
         "alive": 1,
         "solved": 5,
         "done": 0,
         "sparse": 0,
     },
-    "task": "random",
-    "enable_rsi": True,
+    "task": "cw",
+    "enable_rsi": False,
     "noise_palm": 0.1,
     "noise_fingers": 0.1,
-    "goal_time_period": [20, 25],   # phase 2: (4, 6)
-    "goal_xrange": (0.025, 0.025),  # phase 2: (0.020, 0.030)
-    "goal_yrange": (0.028, 0.028),  # phase 2: (0.022, 0.032)
+    "noise_balls": 0.02,
+    "goal_time_period": [4, 6],   # phase 2: (4, 6)
+    "goal_xrange": (0.020, 0.030),  # phase 2: (0.020, 0.030)
+    "goal_yrange": (0.022, 0.032),  # phase 2: (0.022, 0.032)
     "drop_th": 1.3,
 }
 

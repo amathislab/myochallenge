@@ -174,19 +174,26 @@ class CustomBaodingEnv(BaodingEnvV1):
         # reset scene (MODIFIED from base class MujocoEnv)
         qpos = self.init_qpos.copy() if reset_pose is None else reset_pose
         qvel = self.init_qvel.copy() if reset_vel is None else reset_vel
-
         self.robot.reset(qpos, qvel)
 
         if self.rsi:
-            # self._init_targets_with_balls()
-            self.step(np.zeros(39))
+            if np.random.uniform(0,1)<self.rsi_probability:
+                # self._init_targets_with_balls()
+                self.step(np.zeros(39))
 
-            # update ball positions
-            obs = self.get_obs().copy()
-            qpos[23] = obs[35]  # ball 1 x-position
-            qpos[24] = obs[36]  # ball 1 y-position
-            qpos[30] = obs[38]  # ball 2 x-position
-            qpos[31] = obs[39]  # ball 2 y-position
+                # update ball positions
+                obs = self.get_obs().copy()
+                qpos[23] = obs[35]  # ball 1 x-position
+                qpos[24] = obs[36]  # ball 1 y-position
+                qpos[30] = obs[38]  # ball 2 x-position
+                qpos[31] = obs[39]  # ball 2 y-position
+
+        if self.noise_balls:
+            # update balls x,y,z positions with relative noise
+            for i in [23,24,25,30,31,32]:
+                qpos[i] += np.random.uniform(
+                    low = -self.noise_balls,
+                    high = self.noise_balls) 
 
         if self.noise_palm:
             qpos = self._add_noise_to_palm_position(qpos, self.noise_palm)
@@ -194,7 +201,7 @@ class CustomBaodingEnv(BaodingEnvV1):
         if self.noise_fingers:
             qpos = self._add_noise_to_finger_positions(qpos, self.noise_fingers)
         
-        if self.rsi or self.noise_palm or self.noise_fingers:
+        if self.rsi or self.noise_palm or self.noise_fingers or self.noise_balls:
             self.set_state(qpos, qvel)
 
         return self.get_obs()
@@ -213,6 +220,8 @@ class CustomBaodingEnv(BaodingEnvV1):
         enable_rsi=False,  # random state init for balls
         noise_palm=0,      # magnitude of noise for palm (between 0 and 1)
         noise_fingers=0,   # magnitude of noise for fingers (between 0 and 1)
+        noise_balls=0,   # relative magnitude of noise for the balls (1 is 100% relative noise)
+        rsi_probability=1, #probability of implementing RSI
         **kwargs
     ):
 
@@ -227,6 +236,8 @@ class CustomBaodingEnv(BaodingEnvV1):
         self.goal_time_period = goal_time_period
         self.goal_xrange = goal_xrange
         self.goal_yrange = goal_yrange
+        self.noise_balls = noise_balls
+        self.rsi_probability = rsi_probability
 
         # balls start at these angles
         #   1= yellow = top right
