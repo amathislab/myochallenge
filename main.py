@@ -19,17 +19,20 @@ from src.metrics.sb_callbacks import EnvDumpCallback
 
 env_name = "CustomMyoBaodingBallsP1"
 
+# saving criteria
+saving_criteria = "score" #dense_rewards
+
 # whether this is the first task of the curriculum (True) or it is loading a previous task (False)
 FIRST_TASK = False
 
 # Path to normalized Vectorized environment (if not first task)
-PATH_TO_NORMALIZED_ENV = "output/training/2022-10-12/09-45-20/training_env.pkl"  # "trained_models/normalized_env_original"
+PATH_TO_NORMALIZED_ENV = "output/training/2022-10-18/08-28-26/training_env.pkl"
 
 # Path to pretrained network (if not first task)
-PATH_TO_PRETRAINED_NET = "output/training/2022-10-12/09-45-20/best_model.zip"  # "trained_models/best_model.zip"
+PATH_TO_PRETRAINED_NET = "output/training/2022-10-18/08-28-26/best_model.zip"
 
 # Tensorboard log (will save best model during evaluation)
-now = datetime.now().strftime("%Y-%m-%d/%H-%M-%S") + "_random_20_25_rsi_noise"
+now = datetime.now().strftime("%Y-%m-%d/%H-%M-%S")
 TENSORBOARD_LOG = os.path.join("output", "training", now)
 
 
@@ -38,20 +41,21 @@ config = {
     "weighted_reward_keys": {
         "pos_dist_1": 1,
         "pos_dist_2": 1,
-        "act_reg": 0.2,
+        "act_reg": 0,
         "alive": 1,
         "solved": 5,
         "done": 0,
         "sparse": 0,
     },
-    "task": "cw",
+    "task": "random",
     "enable_rsi": False,
-    "noise_palm": 0.1,
-    "noise_fingers": 0.1,
-    "noise_balls": 0.02,
-    "goal_time_period": [4, 6],   # phase 2: (4, 6)
-    "goal_xrange": (0.020, 0.030),  # phase 2: (0.020, 0.030)
-    "goal_yrange": (0.022, 0.032),  # phase 2: (0.022, 0.032)
+    "rsi_probability": 0,
+    "noise_palm": 0,
+    "noise_fingers": 0,
+    "noise_balls": 0,
+    "goal_time_period": [5, 5],   # phase 2: (4, 6)
+    "goal_xrange": (0.025, 0.025),  # phase 2: (0.020, 0.030)
+    "goal_yrange": (0.028, 0.028),  # phase 2: (0.022, 0.032)
     "drop_th": 1.3,
 }
 
@@ -83,19 +87,6 @@ if __name__ == "__main__":
     else:
         envs = VecNormalize.load(PATH_TO_NORMALIZED_ENV, envs)
 
-    # Callback to evaluate dense rewards
-    env_dump_callback = EnvDumpCallback(TENSORBOARD_LOG, verbose=0)
-
-    eval_callback = EvalCallback(
-        envs,
-        callback_on_new_best=env_dump_callback,
-        best_model_save_path=TENSORBOARD_LOG,
-        log_path=TENSORBOARD_LOG,
-        eval_freq=2500,
-        deterministic=True,
-        render=False,
-        n_eval_episodes=20,
-    )
 
     # Callbacks for score and for effort
 
@@ -124,6 +115,34 @@ if __name__ == "__main__":
 
     score_callback = EvaluateLSTM(eval_freq = 5000, eval_env = env_score, name = 'eval/score', num_episodes=10)
     effort_callback = EvaluateLSTM(eval_freq = 5000, eval_env = env_effort, name = 'eval/effort', num_episodes=10)
+
+    # Evaluation Callback
+
+    # Create vectorized environments:
+    if saving_criteria=="score":
+        eval_envs = make_parallel_envs(env_name, config_score, num_env=16)
+    elif saving_criteria=="dense_rewards":
+        eval_envs = make_parallel_envs(env_name, config, num_env=16)
+    else:
+        raise ValueError('Unrecognized saving criteria')
+
+    if FIRST_TASK:
+        eval_envs = VecNormalize(eval_envs)
+    else:
+        eval_envs = VecNormalize.load(PATH_TO_NORMALIZED_ENV, eval_envs) 
+
+    env_dump_callback = EnvDumpCallback(TENSORBOARD_LOG, verbose=0)
+
+    eval_callback = EvalCallback(
+        eval_envs,
+        callback_on_new_best=env_dump_callback,
+        best_model_save_path=TENSORBOARD_LOG,
+        log_path=TENSORBOARD_LOG,
+        eval_freq=2500,
+        deterministic=True,
+        render=False,
+        n_eval_episodes=20,
+    )
 
     # Create model (hyperparameters from RL Zoo HalfCheetak)
     if FIRST_TASK:
@@ -154,7 +173,7 @@ if __name__ == "__main__":
         )
     else:
         model = RecurrentPPO.load(
-            PATH_TO_PRETRAINED_NET, env=envs, tensorboard_log=TENSORBOARD_LOG
+            PATH_TO_PRETRAINED_NET, env=envs, tensorboard_log=TENSORBOARD_LOG, device='cuda'
         )
 
     # Train and save model

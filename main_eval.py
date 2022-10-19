@@ -12,14 +12,12 @@ env_name = "CustomMyoBaodingBallsP1"
 
 # Path to normalized Vectorized environment (if not first task)
 # PATH_TO_NORMALIZED_ENV = "output/training/2022-09-23_12-16-54/training_env.pkl"  # "trained_models/normalized_env_original"
-PATH_TO_NORMALIZED_ENV = "trained_models/normalized_env_phase1_final"  # "trained_models/normalized_env_original"
+PATH_TO_NORMALIZED_ENV = "trained_models/random/08-28-26_random_6_6/training_env.pkl"  # "trained_models/normalized_env_original"
 
 
 # Path to pretrained network (if not first task)
 # PATH_TO_PRETRAINED_NET = "output/training/2022-09-23_12-16-54/best_model.zip"  # "trained_models/best_model.zip"
-PATH_TO_PRETRAINED_NET = (
-    "trained_models/phase1_final.zip"  # "trained_models/best_model.zip"
-)
+PATH_TO_PRETRAINED_NET = "trained_models/random/08-28-26_random_6_6/best_model.zip"  # "trained_models/best_model.zip"
 
 # Reward structure and task parameters:
 config = {
@@ -32,12 +30,12 @@ config = {
         "done": 0,
         "sparse": 0,
     },
-    "task": "ccw",
+    "task": "random",
     "enable_rsi": False,
     "noise_palm": 0,
     "noise_fingers": 0,
-    "noise_balls": 0.1,
-    "goal_time_period": [5, 5],   # phase 2: (4, 6)
+    "noise_balls": 0.,
+    "goal_time_period": [6, 6],   # phase 2: (4, 6)
     "goal_xrange": (0.025, 0.025),  # phase 2: (0.020, 0.030)
     "goal_yrange": (0.028, 0.028),  # phase 2: (0.022, 0.032)
     # "drop_th": 1.3,
@@ -93,11 +91,13 @@ if __name__ == "__main__":
         lstm_states = None
         cum_rew = 0
         step = 0
+        # eval_env.reset()
+        # eval_env.step(np.zeros(39))
         obs = eval_env.reset()
         episode_starts = np.ones((1,), dtype=bool)
         done = False
         while not done:
-            eval_env.sim.render(mode="window")
+            # eval_env.sim.render(mode="window")
             action, lstm_states = eval_model.predict(
                 envs.normalize_obs(obs),
                 state=lstm_states,
@@ -111,5 +111,4 @@ if __name__ == "__main__":
         lens.append(step)
         perfs.append(cum_rew)
         print("Episode", i, ", len:", step, ", cum rew: ", cum_rew)
-        print(info)
     print(("Average len:", np.mean(lens), "     ", "Average rew:", np.mean(perfs)))
