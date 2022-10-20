@@ -12,13 +12,13 @@ env_name = "CustomMyoReorientP1"
 
 # Path to normalized Vectorized environment (if not first task)
 # PATH_TO_NORMALIZED_ENV = "output/training/2022-09-23_12-16-54/training_env.pkl"  # "trained_models/normalized_env_original"
-PATH_TO_NORMALIZED_ENV = "trained_models/reorient/19-10-08_die_orient_random_pos_0_003_rot_0_1/training_env.pkl"
+PATH_TO_NORMALIZED_ENV = "output/training/2022-10-17/00-30-04_die_orient_random_pos_0_rot_0_7/training_env.pkl"
 
 
 # Path to pretrained network (if not first task)
 # PATH_TO_PRETRAINED_NET = "output/training/2022-09-23_12-16-54/best_model.zip"  # "trained_models/best_model.zip"
 PATH_TO_PRETRAINED_NET = (
-    "trained_models/reorient/19-10-08_die_orient_random_pos_0_003_rot_0_1/best_model.zip"
+    "output/training/2022-10-17/00-30-04_die_orient_random_pos_0_rot_0_7/best_model.zip"
 )
 
 # Reward structure and task parameters:
@@ -34,12 +34,15 @@ config = {
     },
     # "noise_palm": 0.1,
     # "noise_fingers": 0.1,
-    "goal_pos": (-0.02, 0.02),  # phase 2: (-0.020, 0.020)
-    "goal_rot": (-3.14, 3.14),  # phase 2: (-3.14, 3.14)
+    "goal_pos": (-0., 0),  # phase 2: (-0.020, 0.020)
+    "goal_rot": (-1.57, 1.57),  # phase 2: (-3.14, 3.14)
     "drop_th": 0.2,
-    "enable_rsi": True,
-    "rsi_distance_pos":0.8,
-    "rsi_distance_rot":0.8,
+    "enable_rsi": False,
+    "rsi_distance_pos": 0,
+    "rsi_distance_rot": 0,
+    "goal_rot_x": [(0, 0)],
+    "goal_rot_y": [(-1.57, -1.57), (1.57, 1.57)],
+    "goal_rot_z": [(0, 0)],
 }
 
 # Function that creates and monitors vectorized environments:
@@ -67,6 +70,7 @@ if __name__ == "__main__":
     # EVALUATE
     eval_model = model
     eval_env = EnvironmentFactory.create(env_name, **config)
+    eval_env._max_episode_steps = 150
 
     # Enjoy trained agent
     num_episodes = 100

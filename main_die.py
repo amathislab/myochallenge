@@ -20,19 +20,17 @@ from src.metrics.sb_callbacks import EnvDumpCallback
 env_name = "CustomMyoReorientP1"
 
 # whether this is the first task of the curriculum (True) or it is loading a previous task (False)
-FIRST_TASK = False
+FIRST_TASK = True
 
 # Path to normalized Vectorized environment (if not first task)
-PATH_TO_NORMALIZED_ENV = "output/training/2022-10-11/19-10-08_die_orient_random_pos_0_003_rot_0_1/training_env.pkl"  # "trained_models/normalized_env_original"
+PATH_TO_NORMALIZED_ENV = "output/training/2022-10-12/11-59-31_die_orient_random_pos_0_01_rot_0_2/training_env.pkl"
 
 # Path to pretrained network (if not first task)
-PATH_TO_PRETRAINED_NET = "output/training/2022-10-11/19-10-08_die_orient_random_pos_0_003_rot_0_1/best_model.zip"  # "trained_models/best_model.zip"
-
-# Tensorboard log (will save best model during evaluation)
-now = (
-    datetime.now().strftime("%Y-%m-%d/%H-%M-%S")
-    + "_die_orient_random_pos_0_01_rot_0_7"
+PATH_TO_PRETRAINED_NET = (
+    "output/training/2022-10-12/11-59-31_die_orient_random_pos_0_01_rot_0_2/best_model.zip"
 )
+# Tensorboard log (will save best model during evaluation)
+now = datetime.now().strftime("%Y-%m-%d/%H-%M-%S") + "_die_orient_rotation_y_both_ways_150_steps"
 TENSORBOARD_LOG = os.path.join("output", "training", now)
 
 
@@ -49,16 +47,24 @@ config = {
     },
     # "noise_palm": 0.1,
     # "noise_fingers": 0.1,
-    "goal_pos": (-0.01, 0.01),  # phase 2: (-0.020, 0.020)
-    "goal_rot": (-0.7, 0.7),  # phase 2: (-3.14, 3.14)
+    "goal_pos": (-0.0, 0),  # phase 2: (-0.020, 0.020)
+    "goal_rot": (-1.57, 1.57),  # phase 2: (-3.14, 3.14)
     "drop_th": 0.2,
+    "enable_rsi": False,
+    "rsi_distance_pos": 0,
+    "rsi_distance_rot": 0,
+    "goal_rot_x": [(0, 0)],
+    "goal_rot_y": [(-1.57, -1.57), (1.57, 1.57)],
+    "goal_rot_z": [(0, 0)],
+    "max_episode_steps": 150,
 }
 
 # Function that creates and monitors vectorized environments:
 def make_parallel_envs(env_name, env_config, num_env, start_index=0):
     def make_env(rank):
         def _thunk():
-            env = EnvironmentFactory.register(env_name, **env_config)
+            env = EnvironmentFactory.create(env_name, **env_config)
+            env._max_episode_steps = env_config["max_episode_steps"]
             env = Monitor(env, TENSORBOARD_LOG)
             return env
 
@@ -90,10 +96,10 @@ if __name__ == "__main__":
         callback_on_new_best=env_dump_callback,
         best_model_save_path=TENSORBOARD_LOG,
         log_path=TENSORBOARD_LOG,
-        eval_freq=2500,
+        eval_freq=5000,
         deterministic=True,
         render=False,
-        n_eval_episodes=20,
+        n_eval_episodes=50,
     )
 
     # Callbacks for score and for effort
@@ -124,8 +130,8 @@ if __name__ == "__main__":
         }
     )
 
-    env_score = EnvironmentFactory.register(env_name, **config_score)
-    env_effort = EnvironmentFactory.register(env_name, **config_effort)
+    env_score = EnvironmentFactory.create(env_name, **config_score)
+    env_effort = EnvironmentFactory.create(env_name, **config_effort)
 
     score_callback = EvaluateLSTM(
         eval_freq=5000, eval_env=env_score, name="eval/score", num_episodes=10
@@ -143,13 +149,13 @@ if __name__ == "__main__":
             tensorboard_log=TENSORBOARD_LOG,
             batch_size=32,
             n_steps=128,
-            learning_rate= 2.55673e-05,
-            ent_coef = 3.62109e-06,
-            clip_range= 0.3,
+            learning_rate=2.55673e-05,
+            ent_coef=3.62109e-06,
+            clip_range=0.3,
             gamma=0.99,
             gae_lambda=0.9,
-            max_grad_norm = 0.7,
-            vf_coef = 0.430793,
+            max_grad_norm=0.7,
+            vf_coef=0.430793,
             n_epochs=10,
             policy_kwargs=dict(
                 ortho_init=False,
