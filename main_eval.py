@@ -8,7 +8,7 @@ from stable_baselines3.common.vec_env.subproc_vec_env import SubprocVecEnv
 from main import PATH_TO_PRETRAINED_NET
 from src.envs.environment_factory import EnvironmentFactory
 
-env_name = "CustomMyoBaodingBallsP1"
+env_name = "CustomMyoBaodingBallsP2"
 
 # Path to normalized Vectorized environment (if not first task)
 # PATH_TO_NORMALIZED_ENV = "output/training/2022-09-23_12-16-54/training_env.pkl"  # "trained_models/normalized_env_original"
@@ -20,42 +20,29 @@ PATH_TO_NORMALIZED_ENV = "trained_models/random/08-28-26_random_6_6/training_env
 PATH_TO_PRETRAINED_NET = "trained_models/random/08-28-26_random_6_6/best_model.zip"  # "trained_models/best_model.zip"
 
 # Reward structure and task parameters:
+
 config = {
     "weighted_reward_keys": {
-        "pos_dist_1": 0,
-        "pos_dist_2": 0,
+        "pos_dist_1": 1,
+        "pos_dist_2": 1,
         "act_reg": 0,
-        "alive": 0,
+        # "alive": 1,
         "solved": 5,
         "done": 0,
         "sparse": 0,
     },
-    "task": "random",
     "enable_rsi": False,
-    "noise_palm": 0,
-    "noise_fingers": 0,
-    "noise_balls": 0.,
-    "goal_time_period": [6, 6],   # phase 2: (4, 6)
-    "goal_xrange": (0.025, 0.025),  # phase 2: (0.020, 0.030)
-    "goal_yrange": (0.028, 0.028),  # phase 2: (0.022, 0.032)
-    # "drop_th": 1.3,
+    "rsi_probability": 1,
+    'balls_overlap': False,
+    'goal_time_period': (10, 10),
+    'goal_xrange': (0.025, 0.025), #(0.020, 0.030)
+    'goal_yrange': (0.028, 0.028), #(0.022, 0.032)
+    # Randomization in physical properties of the baoding balls
+    'obj_size_range': (0.022, 0.022),    #(0.018, 0.024   # Object size range. Nominal 0.022
+    'obj_mass_range': (0.043, 0.043),    #(0.030, 0.300)   # Object weight range. Nominal 43 gms
+    'obj_friction_change': (0.0, 0.00, 0.0000), # (0.2, 0.001, 0.00002) nominal: 1.0, 0.005, 0.0001
+    'task_choice': 'random'
 }
-# config = {
-#     "weighted_reward_keys": {
-#         "pos_dist_1": 0,
-#         "pos_dist_2": 0,
-#         "act_reg": 0,
-#         "alive": 0,
-#         "solved": 5,
-#         "done": 0,
-#         "sparse": 0,
-#     },
-#     "goal_time_period": [1e100, 1e100],
-#     "task": "cw",
-#     "enable_rhi": False,
-#     "enable_rsi": True,
-# }
-
 
 # Function that creates and monitors vectorized environments:
 def make_parallel_envs(env_name, env_config, num_env, start_index=0):
@@ -97,7 +84,7 @@ if __name__ == "__main__":
         episode_starts = np.ones((1,), dtype=bool)
         done = False
         while not done:
-            # eval_env.sim.render(mode="window")
+            eval_env.sim.render(mode="window")
             action, lstm_states = eval_model.predict(
                 envs.normalize_obs(obs),
                 state=lstm_states,

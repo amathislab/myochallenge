@@ -3,7 +3,8 @@ import random
 
 import numpy as np
 from myosuite.envs.myo.base_v0 import BaseV0
-from myosuite.envs.myo.myochallenge.baoding_v1 import WHICH_TASK, BaodingEnvV1, Task
+from myosuite.envs.myo.myochallenge.baoding_v1 import (WHICH_TASK,
+                                                       BaodingEnvV1, Task)
 
 
 class CustomBaodingEnv(BaodingEnvV1):
@@ -291,26 +292,85 @@ class CustomBaodingEnv(BaodingEnvV1):
 
 
 class CustomBaodingP2Env(BaodingEnvV1):
+    
+    def _setup(self,
+            frame_skip:int=10,
+            drop_th = 1.25,             # drop height threshold
+            proximity_th = 0.015,       # object-target proximity threshold
+            goal_time_period = (5, 5),  # target rotation time period
+            goal_xrange = (0.025, 0.025),  # target rotation: x radius (0.03)
+            goal_yrange = (0.028, 0.028),  # target rotation: x radius (0.02 * 1.5 * 1.2)
+            obj_size_range = (0.018, 0.024),       # Object size range. Nominal 0.022
+            obj_mass_range = (0.030, 0.300),       # Object weight range. Nominal 43 gms
+            obj_friction_change = (0.2, 0.001, 0.00002),
+            task_choice = 'fixed',      # fixed/ random
+            obs_keys: list = BaodingEnvV1.DEFAULT_OBS_KEYS,
+            weighted_reward_keys: list = BaodingEnvV1.DEFAULT_RWD_KEYS_AND_WEIGHTS,
+            enable_rsi=False,  # random state init for balls    
+            rsi_probability=1,  # probability of implementing RSI
+            balls_overlap = False,
+            **kwargs,
+        ):
+
+        # user parameters
+        self.task_choice = task_choice
+        self.which_task = self.np_random.choice(Task) if task_choice == 'random' else Task(WHICH_TASK)
+        self.drop_th = drop_th
+        self.proximity_th = proximity_th
+        self.goal_time_period = goal_time_period
+        self.goal_xrange = goal_xrange
+        self.goal_yrange = goal_yrange
+        self.rsi = enable_rsi
+        self.rsi_probability = rsi_probability
+        self.balls_overlap = balls_overlap
+
+        # balls start at these angles
+        #   1= yellow = top right
+        #   2= pink = bottom left
+        self.ball_1_starting_angle = 1.*np.pi/4.0
+        self.ball_2_starting_angle = self.ball_1_starting_angle-np.pi
+
+        # init desired trajectory, for rotations
+        self.center_pos = [-.0125, -.07] # [-.0020, -.0522]
+        self.x_radius=self.np_random.uniform(low=self.goal_xrange[0], high=self.goal_xrange[1])
+        self.y_radius=self.np_random.uniform(low=self.goal_yrange[0], high=self.goal_yrange[1])
+
+        self.counter=0
+        self.goal = self.create_goal_trajectory(time_step=frame_skip*self.sim.model.opt.timestep, time_period=6)
+
+        # init target and body sites
+        self.object1_bid = self.sim.model.body_name2id('ball1')
+        self.object2_bid = self.sim.model.body_name2id('ball2')
+        self.object1_sid = self.sim.model.site_name2id('ball1_site')
+        self.object2_sid = self.sim.model.site_name2id('ball2_site')
+        self.object1_gid = self.sim.model.geom_name2id('ball1')
+        self.object2_gid = self.sim.model.geom_name2id('ball2')
+        self.target1_sid = self.sim.model.site_name2id('target1_site')
+        self.target2_sid = self.sim.model.site_name2id('target2_site')
+        self.sim.model.site_group[self.target1_sid] = 2
+        self.sim.model.site_group[self.target2_sid] = 2
+
+        # setup for task randomization
+        self.obj_mass_range = {'low':obj_mass_range[0], 'high':obj_mass_range[1]}
+        self.obj_size_range = {'low':obj_size_range[0], 'high':obj_size_range[1]}
+        self.obj_friction_range = {'low':self.sim.model.geom_friction[self.object1_gid] - obj_friction_change,
+                                    'high':self.sim.model.geom_friction[self.object1_gid] + obj_friction_change}
+
+        BaseV0._setup(
+            self,
+            obs_keys=obs_keys,
+            weighted_reward_keys=weighted_reward_keys,
+            frame_skip=frame_skip,
+            **kwargs,
+        )
+
+        # reset position
+        self.init_qpos[:-14] *= 0 # Use fully open as init pos
+        self.init_qpos[0] = -1.57 # Palm up
+
+
     def reset(self, reset_pose=None, reset_vel=None, reset_goal=None, time_period=None):
-        if self.rsi and np.random.uniform(0, 1) < self.rsi_probability:
-            random_phase = np.random.uniform(low=-np.pi, high=np.pi)
-            self.ball_1_starting_angle = 3.0 * np.pi / 4.0 + random_phase
-            self.ball_2_starting_angle = -1.0 * np.pi / 4.0 + random_phase
-            self.goal = self.create_goal_trajectory(time_step=self.dt, time_period=time_period) if reset_goal is None else reset_goal.copy()
-            
-            # reset scene (MODIFIED from base class MujocoEnv)
-            qpos = self.init_qpos.copy() if reset_pose is None else reset_pose
-            qvel = self.init_qvel.copy() if reset_vel is None else reset_vel
-            self.robot.reset(qpos, qvel)
-            self.step(np.zeros(39))
-            # update ball positions
-            obs = self.get_obs().copy()
-            qpos[23] = obs[35]  # ball 1 x-position
-            qpos[24] = obs[36]  # ball 1 y-position
-            qpos[30] = obs[38]  # ball 2 x-position
-            qpos[31] = obs[39]  # ball 2 y-position
-            self.set_state(qpos, qvel)
-        
+
         # reset task
         if self.task_choice == 'random':
             self.which_task = self.np_random.choice(Task)
@@ -343,4 +403,31 @@ class CustomBaodingP2Env(BaodingEnvV1):
         qpos = self.init_qpos.copy() if reset_pose is None else reset_pose
         qvel = self.init_qvel.copy() if reset_vel is None else reset_vel
         self.robot.reset(qpos, qvel)
+        
+        if self.rsi and np.random.uniform(0, 1) < self.rsi_probability:
+            
+            random_phase = np.random.uniform(low=-np.pi, high=np.pi)
+            self.ball_1_starting_angle = 3.0 * np.pi / 4.0 + random_phase
+            self.ball_2_starting_angle = -1.0 * np.pi / 4.0 + random_phase
+            self.goal = self.create_goal_trajectory(time_step=self.dt, time_period=time_period) if reset_goal is None else reset_goal.copy()
+            
+            # reset scene (MODIFIED from base class MujocoEnv)
+            qpos = self.init_qpos.copy() if reset_pose is None else reset_pose
+            qvel = self.init_qvel.copy() if reset_vel is None else reset_vel
+            self.robot.reset(qpos, qvel)
+            self.step(np.zeros(39))
+            # update ball positions
+            obs = self.get_obs().copy()
+            qpos[23] = obs[35]  # ball 1 x-position
+            qpos[24] = obs[36]  # ball 1 y-position
+            qpos[30] = obs[38]  # ball 2 x-position
+            qpos[31] = obs[39]  # ball 2 y-position
+            self.set_state(qpos, qvel)
+
+            if self.balls_overlap is False:
+                self.ball_1_starting_angle = self.np_random.uniform(low=0, high=2*np.pi)
+                self.ball_2_starting_angle = self.ball_1_starting_angle-np.pi
+        
+
         return self.get_obs()
+
