@@ -87,37 +87,6 @@ class CustomBaodingEnv(BaodingEnvV1):
 
         return rwd_dict
 
-    def _init_targets_with_balls(self) -> None:
-        desired_angle_wrt_palm = self.goal[self.counter].copy()
-        desired_angle_wrt_palm[0] = (
-            desired_angle_wrt_palm[0] + self.ball_1_starting_angle
-        )
-        desired_angle_wrt_palm[1] = (
-            desired_angle_wrt_palm[1] + self.ball_2_starting_angle
-        )
-
-        desired_positions_wrt_palm = [0, 0, 0, 0]
-        desired_positions_wrt_palm[0] = (
-            self.x_radius * np.cos(desired_angle_wrt_palm[0]) + self.center_pos[0]
-        )
-        desired_positions_wrt_palm[1] = (
-            self.y_radius * np.sin(desired_angle_wrt_palm[0]) + self.center_pos[1]
-        )
-        desired_positions_wrt_palm[2] = (
-            self.x_radius * np.cos(desired_angle_wrt_palm[1]) + self.center_pos[0]
-        )
-        desired_positions_wrt_palm[3] = (
-            self.y_radius * np.sin(desired_angle_wrt_palm[1]) + self.center_pos[1]
-        )
-
-        # update both sims with desired targets
-        for sim in [self.sim, self.sim_obsd]:
-            sim.model.site_pos[self.target1_sid, 0] = desired_positions_wrt_palm[0]
-            sim.model.site_pos[self.target1_sid, 1] = desired_positions_wrt_palm[1]
-            sim.model.site_pos[self.target2_sid, 0] = desired_positions_wrt_palm[2]
-            sim.model.site_pos[self.target2_sid, 1] = desired_positions_wrt_palm[3]
-            sim.forward()
-
     def _add_noise_to_palm_position(
         self, qpos: np.ndarray, noise: float = 1
     ) -> np.ndarray:
@@ -205,7 +174,6 @@ class CustomBaodingEnv(BaodingEnvV1):
 
         if self.rsi:
             if np.random.uniform(0, 1) < self.rsi_probability:
-                # self._init_targets_with_balls()
                 self.step(np.zeros(39))
 
                 # update ball positions
@@ -320,3 +288,59 @@ class CustomBaodingEnv(BaodingEnvV1):
                 return Task(random.choice(list(Task)))
             else:
                 raise ValueError("Unknown task for baoding: ", self.task)
+
+
+class CustomBaodingP2Env(BaodingEnvV1):
+    def reset(self, reset_pose=None, reset_vel=None, reset_goal=None, time_period=None):
+        if self.rsi and np.random.uniform(0, 1) < self.rsi_probability:
+            random_phase = np.random.uniform(low=-np.pi, high=np.pi)
+            self.ball_1_starting_angle = 3.0 * np.pi / 4.0 + random_phase
+            self.ball_2_starting_angle = -1.0 * np.pi / 4.0 + random_phase
+            self.goal = self.create_goal_trajectory(time_step=self.dt, time_period=time_period) if reset_goal is None else reset_goal.copy()
+            
+            # reset scene (MODIFIED from base class MujocoEnv)
+            qpos = self.init_qpos.copy() if reset_pose is None else reset_pose
+            qvel = self.init_qvel.copy() if reset_vel is None else reset_vel
+            self.robot.reset(qpos, qvel)
+            self.step(np.zeros(39))
+            # update ball positions
+            obs = self.get_obs().copy()
+            qpos[23] = obs[35]  # ball 1 x-position
+            qpos[24] = obs[36]  # ball 1 y-position
+            qpos[30] = obs[38]  # ball 2 x-position
+            qpos[31] = obs[39]  # ball 2 y-position
+            self.set_state(qpos, qvel)
+        
+        # reset task
+        if self.task_choice == 'random':
+            self.which_task = self.np_random.choice(Task)
+            self.ball_1_starting_angle = self.np_random.uniform(low=0, high=2*np.pi)
+            self.ball_2_starting_angle = self.ball_1_starting_angle-np.pi
+            
+        # reset counters
+        self.counter=0
+        self.x_radius=self.np_random.uniform(low=self.goal_xrange[0], high=self.goal_xrange[1])
+        self.y_radius=self.np_random.uniform(low=self.goal_yrange[0], high=self.goal_yrange[1])
+
+        # reset goal
+        if time_period == None:
+            time_period = self.np_random.uniform(low=self.goal_time_period[0], high=self.goal_time_period[1])
+        self.goal = self.create_goal_trajectory(time_step=self.dt, time_period=time_period) if reset_goal is None else reset_goal.copy()
+
+        # balls mass changes
+        self.sim.model.body_mass[self.object1_bid] = self.np_random.uniform(**self.obj_mass_range) # call to mj_setConst(m,d) is being ignored. Derive quantities wont be updated. Die is simple shape. So this is reasonable approximation.
+        self.sim.model.body_mass[self.object2_bid] = self.np_random.uniform(**self.obj_mass_range) # call to mj_setConst(m,d) is being ignored. Derive quantities wont be updated. Die is simple shape. So this is reasonable approximation.
+
+        # balls friction changes
+        self.sim.model.geom_friction[self.object1_gid] = self.np_random.uniform(**self.obj_friction_range)
+        self.sim.model.geom_friction[self.object2_gid] = self.np_random.uniform(**self.obj_friction_range)
+
+        # balls size changes
+        self.sim.model.geom_size[self.object1_gid] = self.np_random.uniform(**self.obj_size_range)
+        self.sim.model.geom_size[self.object2_gid] = self.np_random.uniform(**self.obj_size_range)
+
+        # reset scene
+        qpos = self.init_qpos.copy() if reset_pose is None else reset_pose
+        qvel = self.init_qvel.copy() if reset_vel is None else reset_vel
+        self.robot.reset(qpos, qvel)
+        return self.get_obs()
