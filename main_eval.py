@@ -26,7 +26,7 @@ config = {
         "pos_dist_1": 1,
         "pos_dist_2": 1,
         "act_reg": 0,
-        # "alive": 1,
+        "alive": 1,
         "solved": 5,
         "done": 0,
         "sparse": 0,
