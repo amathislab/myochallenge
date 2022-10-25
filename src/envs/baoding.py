@@ -309,6 +309,8 @@ class CustomBaodingP2Env(BaodingEnvV1):
             enable_rsi=False,  # random state init for balls    
             rsi_probability=1,  # probability of implementing RSI
             balls_overlap = False,
+            overlap_probability = 0,
+            limit_init_angle = False,
             **kwargs,
         ):
 
@@ -323,12 +325,19 @@ class CustomBaodingP2Env(BaodingEnvV1):
         self.rsi = enable_rsi
         self.rsi_probability = rsi_probability
         self.balls_overlap = balls_overlap
+        self.overlap_probability = overlap_probability
+        self.limit_init_angle = limit_init_angle
 
         # balls start at these angles
         #   1= yellow = top right
         #   2= pink = bottom left
-        self.ball_1_starting_angle = 1.*np.pi/4.0
-        self.ball_2_starting_angle = self.ball_1_starting_angle-np.pi
+
+        if np.random.uniform(0,1)<self.overlap_probability:
+            self.ball_1_starting_angle = 3.0 * np.pi / 4.0
+            self.ball_2_starting_angle = -1.0 * np.pi / 4.0
+        else:
+            self.ball_1_starting_angle = 1.*np.pi/4.0
+            self.ball_2_starting_angle = self.ball_1_starting_angle-np.pi
 
         # init desired trajectory, for rotations
         self.center_pos = [-.0125, -.07] # [-.0020, -.0522]
@@ -412,7 +421,15 @@ class CustomBaodingP2Env(BaodingEnvV1):
         # reset task
         if self.task_choice == 'random':
             self.which_task = self.np_random.choice(Task)
-            self.ball_1_starting_angle = self.np_random.uniform(low=0, high=2*np.pi)
+
+            if np.random.uniform(0,1)<self.overlap_probability:
+                self.ball_1_starting_angle = 3.0 * np.pi / 4.0
+            elif self.limit_init_angle:
+                random_phase =  self.np_random.uniform(low=-self.limit_init_angle, high=self.limit_init_angle)
+                self.ball_1_starting_angle = 3.0 * np.pi / 4.0 + random_phase
+            else:
+                self.ball_1_starting_angle = self.np_random.uniform(low=0, high=2*np.pi)
+
             self.ball_2_starting_angle = self.ball_1_starting_angle-np.pi
             
         # reset counters

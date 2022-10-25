@@ -17,19 +17,19 @@ from src.envs.environment_factory import EnvironmentFactory
 from src.metrics.custom_callbacks import EvaluateLSTM
 from src.metrics.sb_callbacks import EnvDumpCallback
 
-env_name = "CustomMyoBaodingBallsP1"
+env_name = "CustomMyoBaodingBallsP2"
 
 # saving criteria
-saving_criteria = "score" #dense_rewards
+saving_criteria = "dense_rewards" #score
 
 # whether this is the first task of the curriculum (True) or it is loading a previous task (False)
 FIRST_TASK = False
 
 # Path to normalized Vectorized environment (if not first task)
-PATH_TO_NORMALIZED_ENV = "output/training/2022-10-18/08-28-26/training_env.pkl"
+PATH_TO_NORMALIZED_ENV = "output/training/2022-10-24/21-07-50/training_env.pkl"  # "trained_models/normalized_env_original"
 
 # Path to pretrained network (if not first task)
-PATH_TO_PRETRAINED_NET = "output/training/2022-10-18/08-28-26/best_model.zip"
+PATH_TO_PRETRAINED_NET = "output/training/2022-10-24/21-07-50/best_model.zip"  # "trained_models/best_model.zip"
 
 # Tensorboard log (will save best model during evaluation)
 now = datetime.now().strftime("%Y-%m-%d/%H-%M-%S")
@@ -47,16 +47,19 @@ config = {
         "done": 0,
         "sparse": 0,
     },
-    "task": "random",
     "enable_rsi": False,
     "rsi_probability": 0,
-    "noise_palm": 0,
-    "noise_fingers": 0,
-    "noise_balls": 0,
-    "goal_time_period": [5, 5],   # phase 2: (4, 6)
-    "goal_xrange": (0.025, 0.025),  # phase 2: (0.020, 0.030)
-    "goal_yrange": (0.028, 0.028),  # phase 2: (0.022, 0.032)
-    "drop_th": 1.3,
+    'balls_overlap': False,
+    "overlap_probability": 0,
+    "limit_init_angle": np.pi/10.0,
+    "goal_time_period": [4.5, 5.5],   # phase 2: (4, 6)
+    "goal_xrange": (0.023, 0.027),  # phase 2: (0.020, 0.030)
+    "goal_yrange": (0.025, 0.030),  # phase 2: (0.022, 0.032)
+    # Randomization in physical properties of the baoding balls
+    'obj_size_range': (0.022, 0.022),    #(0.018, 0.024   # Object size range. Nominal 0.022
+    'obj_mass_range': (0.043, 0.043),    #(0.030, 0.300)   # Object weight range. Nominal 43 gms
+    'obj_friction_change': (0.0, 0.00, 0.0000), # (0.2, 0.001, 0.00002) nominal: 1.0, 0.005, 0.0001
+    'task_choice': 'random'
 }
 
 # Function that creates and monitors vectorized environments:
@@ -172,6 +175,9 @@ if __name__ == "__main__":
             ),
         )
     else:
+        custom_objects = {      # need to define this since my python version is newer
+        "learning_rate": lambda f:3e-4 * f,
+        }
         model = RecurrentPPO.load(
             PATH_TO_PRETRAINED_NET, env=envs, tensorboard_log=TENSORBOARD_LOG, device='cuda'
         )
