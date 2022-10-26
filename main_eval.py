@@ -12,31 +12,32 @@ env_name = "CustomMyoBaodingBallsP2"
 
 # Path to normalized Vectorized environment (if not first task)
 # PATH_TO_NORMALIZED_ENV = "output/training/2022-09-23_12-16-54/training_env.pkl"  # "trained_models/normalized_env_original"
-PATH_TO_NORMALIZED_ENV = "trained_models/random/08-28-26_random_6_6/training_env.pkl"  # "trained_models/normalized_env_original"
+PATH_TO_NORMALIZED_ENV = "trained_models/09-04-00/training_env.pkl"  # "trained_models/normalized_env_original"
 
 
 # Path to pretrained network (if not first task)
 # PATH_TO_PRETRAINED_NET = "output/training/2022-09-23_12-16-54/best_model.zip"  # "trained_models/best_model.zip"
-PATH_TO_PRETRAINED_NET = "trained_models/random/08-28-26_random_6_6/best_model.zip"  # "trained_models/best_model.zip"
+PATH_TO_PRETRAINED_NET = "trained_models/09-04-00/best_model.zip"  # "trained_models/best_model.zip"
 
 # Reward structure and task parameters:
 
 config = {
     "weighted_reward_keys": {
-        "pos_dist_1": 1,
-        "pos_dist_2": 1,
+        "pos_dist_1": 0,
+        "pos_dist_2": 0,
         "act_reg": 0,
-        "alive": 1,
+        "alive": 0,
         "solved": 5,
         "done": 0,
         "sparse": 0,
     },
     "enable_rsi": False,
-    "rsi_probability": 1,
+    "rsi_probability": 0,
     'balls_overlap': False,
-    'goal_time_period': (10, 10),
-    'goal_xrange': (0.025, 0.025), #(0.020, 0.030)
-    'goal_yrange': (0.028, 0.028), #(0.022, 0.032)
+    "overlap_probability": 0,
+    "goal_time_period": [4.5, 5.5],   # phase 2: (4, 6)
+    "goal_xrange": (0.023, 0.027),  # phase 2: (0.020, 0.030)
+    "goal_yrange": (0.025, 0.030),  # phase 2: (0.022, 0.032)
     # Randomization in physical properties of the baoding balls
     'obj_size_range': (0.022, 0.022),    #(0.018, 0.024   # Object size range. Nominal 0.022
     'obj_mass_range': (0.043, 0.043),    #(0.030, 0.300)   # Object weight range. Nominal 43 gms
