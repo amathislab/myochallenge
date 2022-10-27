@@ -123,9 +123,9 @@ if __name__ == "__main__":
 
     # Create vectorized environments:
     if saving_criteria=="score":
-        eval_envs = make_parallel_envs(env_name, config_score, num_env=16)
+        eval_envs = make_parallel_envs(env_name, config_score, num_env=1)
     elif saving_criteria=="dense_rewards":
-        eval_envs = make_parallel_envs(env_name, config, num_env=16)
+        eval_envs = make_parallel_envs(env_name, config, num_env=1)
     else:
         raise ValueError('Unrecognized saving criteria')
 
@@ -176,10 +176,15 @@ if __name__ == "__main__":
         )
     else:
         custom_objects = {      # need to define this since my python version is newer
-        "learning_rate": lambda f:3e-4 * f,
+        "lr_schedule": lambda f:1e-4 * f,
+        "clip_range": 0.2,
         }
         model = RecurrentPPO.load(
-            PATH_TO_PRETRAINED_NET, env=envs, tensorboard_log=TENSORBOARD_LOG, device='cuda'
+            PATH_TO_PRETRAINED_NET,
+            env=envs,
+            tensorboard_log=TENSORBOARD_LOG,
+            device='cuda',
+            custom_objects=custom_objects
         )
 
     # Train and save model
