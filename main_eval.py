@@ -11,10 +11,10 @@ from src.envs.environment_factory import EnvironmentFactory
 env_name = "CustomMyoBaodingBallsP2"
 
 # Path to normalized Vectorized environment (if not first task)
-PATH_TO_NORMALIZED_ENV = "trained_models/14-04-59/training_env.pkl"  # "trained_models/normalized_env_original"
+PATH_TO_NORMALIZED_ENV = "trained_models/09-24-25/training_env.pkl"  # "trained_models/normalized_env_original"
 
 # Path to pretrained network (if not first task)
-PATH_TO_PRETRAINED_NET = "trained_models/14-04-59/best_model.zip"  # "trained_models/best_model.zip"
+PATH_TO_PRETRAINED_NET = "trained_models/09-24-25/best_model.zip"  # "trained_models/best_model.zip"
 
 
 # Reward structure and task parameters:
@@ -32,8 +32,8 @@ config = {
     "rsi_probability": 0,
     'balls_overlap': False,
     "overlap_probability": 0,
-    "limit_init_angle": np.pi* (1),
-    "goal_time_period": [4.5, 5.5],   # phase 2: (4, 6)
+    "limit_init_angle": np.pi * 0.5,
+    "goal_time_period": [15, 15],   # phase 2: (4, 6)
     "goal_xrange": (0.023, 0.027),  # phase 2: (0.020, 0.030)
     "goal_yrange": (0.025, 0.030),  # phase 2: (0.022, 0.032)
     # Randomization in physical properties of the baoding balls
@@ -42,6 +42,7 @@ config = {
     'obj_friction_change': (0.0, 0.00, 0.0000), # (0.2, 0.001, 0.00002) nominal: 1.0, 0.005, 0.0001
     'task_choice': 'random'
 }
+
 
 # Function that creates and monitors vectorized environments:
 def make_parallel_envs(env_name, env_config, num_env, start_index=0):

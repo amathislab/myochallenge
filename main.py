@@ -26,10 +26,10 @@ saving_criteria = "dense_rewards" #score
 FIRST_TASK = False
 
 # Path to normalized Vectorized environment (if not first task)
-PATH_TO_NORMALIZED_ENV = "trained_models/14-04-59/training_env.pkl"  # "trained_models/normalized_env_original"
+PATH_TO_NORMALIZED_ENV = "trained_models/baoding_phase2/08-59-44_period20_angle033pi/training_env.pkl"  # "trained_models/normalized_env_original"
 
 # Path to pretrained network (if not first task)
-PATH_TO_PRETRAINED_NET = "trained_models/14-04-59/best_model.zip"  # "trained_models/best_model.zip"
+PATH_TO_PRETRAINED_NET = "trained_models/09-26-37/best_model.zip"  # "trained_models/best_model.zip"
 
 # Tensorboard log (will save best model during evaluation)
 now = datetime.now().strftime("%Y-%m-%d/%H-%M-%S")
@@ -51,7 +51,7 @@ config = {
     "rsi_probability": 0,
     'balls_overlap': False,
     "overlap_probability": 0,
-    "limit_init_angle": np.pi* (0.2),
+    "limit_init_angle": np.pi* (0.3),
     "goal_time_period": [4.5, 5.5],   # phase 2: (4, 6)
     "goal_xrange": (0.023, 0.027),  # phase 2: (0.020, 0.030)
     "goal_yrange": (0.025, 0.030),  # phase 2: (0.022, 0.032)
