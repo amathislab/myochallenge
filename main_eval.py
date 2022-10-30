@@ -11,10 +11,10 @@ from src.envs.environment_factory import EnvironmentFactory
 env_name = "CustomMyoBaodingBallsP2"
 
 # Path to normalized Vectorized environment (if not first task)
-PATH_TO_NORMALIZED_ENV = "trained_models/baoding_phase2/18-04-10/training_env.pkl"  # "trained_models/normalized_env_original"
+PATH_TO_NORMALIZED_ENV = "trained_models/baoding_phase2/14-15-06/training_env.pkl"  # "trained_models/normalized_env_original"
 
 # Path to pretrained network (if not first task)
-PATH_TO_PRETRAINED_NET = "trained_models/baoding_phase2/18-04-10/best_model.zip"  # "trained_models/best_model.zip"
+PATH_TO_PRETRAINED_NET = "trained_models/baoding_phase2/14-15-06/best_model.zip"  # "trained_models/best_model.zip"
 
 
 # Reward structure and task parameters:
