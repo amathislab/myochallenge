@@ -26,10 +26,10 @@ saving_criteria = "dense_rewards" #score
 FIRST_TASK = False
 
 # Path to normalized Vectorized environment (if not first task)
-PATH_TO_NORMALIZED_ENV = "trained_models/baoding_phase2/08-59-44_period20_angle033pi/training_env.pkl"  # "trained_models/normalized_env_original"
+PATH_TO_NORMALIZED_ENV = "trained_models/baoding_phase2/14-15-06/training_env.pkl"  # "trained_models/normalized_env_original"
 
 # Path to pretrained network (if not first task)
-PATH_TO_PRETRAINED_NET = "trained_models/09-26-37/best_model.zip"  # "trained_models/best_model.zip"
+PATH_TO_PRETRAINED_NET = "trained_models/baoding_phase2/14-15-06/best_model.zip"  # "trained_models/best_model.zip"
 
 # Tensorboard log (will save best model during evaluation)
 now = datetime.now().strftime("%Y-%m-%d/%H-%M-%S")
@@ -123,9 +123,9 @@ if __name__ == "__main__":
 
     # Create vectorized environments:
     if saving_criteria=="score":
-        eval_envs = make_parallel_envs(env_name, config_score, num_env=1)
+        eval_envs = make_parallel_envs(env_name, config_score, num_env=16)
     elif saving_criteria=="dense_rewards":
-        eval_envs = make_parallel_envs(env_name, config, num_env=1)
+        eval_envs = make_parallel_envs(env_name, config, num_env=16)
     else:
         raise ValueError('Unrecognized saving criteria')
 
@@ -176,15 +176,10 @@ if __name__ == "__main__":
         )
     else:
         custom_objects = {      # need to define this since my python version is newer
-        "lr_schedule": lambda f:1e-4 * f,
-        "clip_range": 0.2,
+        "learning_rate": lambda f:3e-4 * f,
         }
         model = RecurrentPPO.load(
-            PATH_TO_PRETRAINED_NET,
-            env=envs,
-            tensorboard_log=TENSORBOARD_LOG,
-            device='cuda',
-            custom_objects=custom_objects
+            PATH_TO_PRETRAINED_NET, env=envs, tensorboard_log=TENSORBOARD_LOG, device='cuda'
         )
 
     # Train and save model
