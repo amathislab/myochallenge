@@ -12,12 +12,10 @@ num_episodes = 1_000
 
 env_name = "CustomMyoBaodingBallsP2"
 
-# Path to normalized Vectorized environment (if not first task)
-PATH_TO_NORMALIZED_ENV = "trained_models/baoding_phase2/14-15-06/training_env.pkl"
-
-# Path to pretrained network (if not first task)
-PATH_TO_PRETRAINED_NET = "trained_models/baoding_phase2/14-15-06/best_model.zip"
-
+# Path to normalized Vectorized environment and best model (if not first task)
+load_folder = "trained_models/baoding_phase2/00-45-16_final_nisheet_score-36"
+PATH_TO_NORMALIZED_ENV = load_folder + "/training_env.pkl"
+PATH_TO_PRETRAINED_NET = load_folder + "/best_model.zip"
 
 # Reward structure and task parameters:
 config = {
