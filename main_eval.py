@@ -13,7 +13,7 @@ num_episodes = 1_000
 env_name = "CustomMyoBaodingBallsP2"
 
 # Path to normalized Vectorized environment and best model (if not first task)
-load_folder = "trained_models/baoding_phase2/00-45-16_final_nisheet_score-36"
+load_folder = "output/training/2022-10-31/14-06-01_final-everything_v2-2_beta-dist_score-on-final"
 PATH_TO_NORMALIZED_ENV = load_folder + "/training_env.pkl"
 PATH_TO_PRETRAINED_NET = load_folder + "/best_model.zip"
 
@@ -108,4 +108,4 @@ if __name__ == "__main__":
         if (i + 1) % 50 == 0:
             print(f"\nEpisode {i+1}/{num_episodes}")
             print(f"Average len: {np.mean(lens)} +/- {np.std(lens)}")
-            print(f"Average rew: {np.mean(perfs)} +/- {np.std(perfs)}")
+            print(f"Average rew: {np.mean(perfs)} +/- {np.std(perfs)}\n")
