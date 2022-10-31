@@ -1,3 +1,4 @@
+# pylint: disable=attribute-defined-outside-init, dangerous-default-value, protected-access, abstract-method, arguments-renamed
 import collections
 import random
 
@@ -51,7 +52,7 @@ class CustomBaodingEnv(BaodingEnvV1):
             (
                 # Perform reward tuning here --
                 # Update Optional Keys section below
-                # Update reward keys (DEFAULT_RWD_KEYS_AND_WEIGHTS) accordingly to update final rewards
+                # Update reward keys (DEFAULT_RWD_KEYS_AND_WEIGHTS) to update final rewards
                 # Examples: Env comes pre-packaged with two keys pos_dist_1 and pos_dist_2
                 # Optional Keys
                 ("pos_dist_1", -1.0 * target1_dist),
@@ -311,6 +312,10 @@ class CustomBaodingP2Env(BaodingEnvV1):
             balls_overlap = False,
             overlap_probability = 0,
             limit_init_angle = False,
+            beta_init_angle: list[float, float] = None,
+            beta_ball_size: list[float, float] = None,
+            beta_ball_mass: list[float, float] = None,
+            noise_fingers = 0,
             **kwargs,
         ):
 
@@ -326,7 +331,11 @@ class CustomBaodingP2Env(BaodingEnvV1):
         self.rsi_probability = rsi_probability
         self.balls_overlap = balls_overlap
         self.overlap_probability = overlap_probability
+        self.noise_fingers = noise_fingers
         self.limit_init_angle = limit_init_angle
+        self.beta_init_angle = beta_init_angle
+        self.beta_ball_size = beta_ball_size
+        self.beta_ball_mass = beta_ball_mass
 
         # balls start at these angles
         #   1= yellow = top right
@@ -416,6 +425,31 @@ class CustomBaodingP2Env(BaodingEnvV1):
 
         return rwd_dict
 
+    def _add_noise_to_finger_positions(
+        self, qpos: np.ndarray, noise: float = 1
+    ) -> np.ndarray:
+        assert 0 <= noise <= 1, "Noise parameter must be between 0 and 1"
+
+        # thumb all joints
+        # noise = 1 corresponds to 10 degrees on either side
+        qpos[4:7] = self.np_random.uniform(
+            low=-np.pi / 18 * noise, high=np.pi / 18 * noise
+        )
+
+        # finger joints
+        # noise = 1 corresponds to 30 degrees bent instead of fully open
+        qpos[[7, 9, 10, 11, 13, 14, 15, 17, 18, 19, 21, 22]] = self.np_random.uniform(
+            low=0, high=np.pi / 6 * noise
+        )
+
+        # finger abduction (sideways angle)
+        # noise = 1 corresponds to 5 degrees on either side
+        # qpos[[8, 12, 16, 20]] = self.np_random.uniform(
+        #     low=-np.pi / 36 * noise, high=np.pi / 36 * noise
+        # )
+
+        return qpos
+
     def reset(self, reset_pose=None, reset_vel=None, reset_goal=None, time_period=None):
 
         # reset task
@@ -425,7 +459,30 @@ class CustomBaodingP2Env(BaodingEnvV1):
             if np.random.uniform(0,1)<self.overlap_probability:
                 self.ball_1_starting_angle = 3.0 * np.pi / 4.0
             elif self.limit_init_angle:
-                random_phase =  self.np_random.uniform(low=-self.limit_init_angle, high=self.limit_init_angle)
+                random_phase =  self.np_random.uniform(
+                    low=-self.limit_init_angle, high=self.limit_init_angle
+                )
+
+                if self.beta_init_angle:
+                    # use beta distribution to sample the angle instead of uniform
+                    # use this to visualize the distribution looks of multiplicative factors
+                    # samples = np.random.choice([-1,1])*(np.random.beta(a,b,10_000))
+                    # h = plt.hist(samples, bins=100, density=True)
+                    # plt.show()
+                    random_phase = self.np_random.beta(
+                        self.beta_init_angle[0], self.beta_init_angle[1]
+                        ) * 2 * np.pi - np.pi
+
+                    # bimodal distribution
+                    # random_phase = (
+                    #     self.np_random.beta(self.beta_dist_init_angle["alpha"],
+                    #     self.beta_dist_init_angle["beta"]
+                    #     ) * (
+                    #     1 + self.beta_dist_init_angle["offset"]
+                    #     ) - self.beta_dist_init_angle["offset"]
+                    # )
+                    # random_phase *= self.np_random.choice([-1, 1]) * self.limit_init_angle
+
                 self.ball_1_starting_angle = 3.0 * np.pi / 4.0 + random_phase
             else:
                 self.ball_1_starting_angle = self.np_random.uniform(low=0, high=2*np.pi)
@@ -446,6 +503,14 @@ class CustomBaodingP2Env(BaodingEnvV1):
         self.sim.model.body_mass[self.object1_bid] = self.np_random.uniform(**self.obj_mass_range) # call to mj_setConst(m,d) is being ignored. Derive quantities wont be updated. Die is simple shape. So this is reasonable approximation.
         self.sim.model.body_mass[self.object2_bid] = self.np_random.uniform(**self.obj_mass_range) # call to mj_setConst(m,d) is being ignored. Derive quantities wont be updated. Die is simple shape. So this is reasonable approximation.
 
+        if self.beta_ball_mass:
+            self.sim.model.body_mass[self.object1_bid] = self.np_random.beta(
+                self.beta_ball_mass[0], self.beta_ball_mass[1]
+                ) * (self.obj_mass_range["high"] - self.obj_mass_range["low"]) + self.obj_mass_range["low"]
+            self.sim.model.body_mass[self.object2_bid] = self.np_random.beta(
+                self.beta_ball_mass[0], self.beta_ball_mass[1]
+                ) * (self.obj_mass_range["high"] - self.obj_mass_range["low"]) + self.obj_mass_range["low"]
+
         # balls friction changes
         self.sim.model.geom_friction[self.object1_gid] = self.np_random.uniform(**self.obj_friction_range)
         self.sim.model.geom_friction[self.object2_gid] = self.np_random.uniform(**self.obj_friction_range)
@@ -453,6 +518,14 @@ class CustomBaodingP2Env(BaodingEnvV1):
         # balls size changes
         self.sim.model.geom_size[self.object1_gid] = self.np_random.uniform(**self.obj_size_range)
         self.sim.model.geom_size[self.object2_gid] = self.np_random.uniform(**self.obj_size_range)
+
+        if self.beta_ball_size:
+            self.sim.model.geom_size[self.object1_gid] = self.np_random.beta(
+                self.beta_ball_size[0], self.beta_ball_size[1]
+                ) * (self.obj_size_range["high"] - self.obj_size_range["low"]) + self.obj_size_range["low"]
+            self.sim.model.geom_size[self.object2_gid] = self.np_random.beta(
+                self.beta_ball_size[0], self.beta_ball_size[1]
+                ) * (self.obj_size_range["high"] - self.obj_size_range["low"]) + self.obj_size_range["low"]
 
         # reset scene
         qpos = self.init_qpos.copy() if reset_pose is None else reset_pose
@@ -482,7 +555,12 @@ class CustomBaodingP2Env(BaodingEnvV1):
             if self.balls_overlap is False:
                 self.ball_1_starting_angle = self.np_random.uniform(low=0, high=2*np.pi)
                 self.ball_2_starting_angle = self.ball_1_starting_angle-np.pi
-        
+
+        if self.noise_fingers:
+            qpos = self.init_qpos.copy() if "qpos" not in locals() else qpos
+            qvel = self.init_qvel.copy() if reset_vel is None else reset_vel
+
+            qpos = self._add_noise_to_finger_positions(qpos, self.noise_fingers)
+            self.set_state(qpos, qvel)
 
         return self.get_obs()
-
