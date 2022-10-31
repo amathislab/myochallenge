@@ -60,8 +60,14 @@ if __name__ == "__main__":
 
     # Normalize environment:
     envs = VecNormalize.load(PATH_TO_NORMALIZED_ENV, envs)
+    envs.training = False
+    envs.norm_reward = False
 
-    # Create model (hyperparameters from RL Zoo HalfCheetak)
+    # Create model
+    custom_objects = {
+        "lr_schedule": 0,
+        "clip_range": 0,
+    }
     model = RecurrentPPO.load(PATH_TO_PRETRAINED_NET, env=envs)
 
     # EVALUATE
