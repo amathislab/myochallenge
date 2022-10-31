@@ -6,6 +6,10 @@ from stable_baselines3.common.vec_env.subproc_vec_env import SubprocVecEnv
 from main import PATH_TO_PRETRAINED_NET
 from src.envs.environment_factory import EnvironmentFactory
 
+# evaluation parameters:
+render = False
+num_episodes = 1_000
+
 env_name = "CustomMyoBaodingBallsP2"
 
 # Path to normalized Vectorized environment (if not first task)
@@ -75,7 +79,6 @@ if __name__ == "__main__":
     eval_env = EnvironmentFactory.create(env_name, **config)
 
     # Enjoy trained agent
-    num_episodes = 1_000
     perfs = []
     lens = []
     for i in range(num_episodes):
@@ -88,7 +91,8 @@ if __name__ == "__main__":
         episode_starts = np.ones((1,), dtype=bool)
         done = False
         while not done:
-            # eval_env.sim.render(mode="window")
+            if render:
+                eval_env.sim.render(mode="window")
             action, lstm_states = eval_model.predict(
                 envs.normalize_obs(obs),
                 state=lstm_states,
