@@ -332,6 +332,9 @@ class CustomBaodingP2Env(BaodingEnvV1):
         self.overlap_probability = overlap_probability
         self.noise_fingers = noise_fingers
         self.limit_init_angle = limit_init_angle
+        self.beta_init_angle = beta_init_angle
+        self.beta_ball_size = beta_ball_size
+        self.beta_ball_mass = beta_ball_mass
 
         # balls start at these angles
         #   1= yellow = top right
