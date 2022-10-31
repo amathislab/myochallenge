@@ -107,5 +107,5 @@ if __name__ == "__main__":
 
         if (i + 1) % 50 == 0:
             print(f"\nEpisode {i+1}/{num_episodes}")
-            print(f"Average len: {np.mean(lens)} +/- {np.std(lens)}")
-            print(f"Average rew: {np.mean(perfs)} +/- {np.std(perfs)}\n")
+            print(f"Average len: {np.mean(lens):.2f} +/- {np.std(lens):.2f}")
+            print(f"Average rew: {np.mean(perfs):.2f} +/- {np.std(perfs):.2f}\n")
