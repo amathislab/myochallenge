@@ -52,7 +52,7 @@ def make_parallel_envs(env_name, env_config, num_env, start_index=0):   # pylint
 
 if __name__ == "__main__":
     # Create vectorized environments:
-    envs = make_parallel_envs(env_name, config, num_env=16)
+    envs = make_parallel_envs(env_name, config, num_env=1)
 
     # Normalize environment:
     envs = VecNormalize.load(PATH_TO_NORMALIZED_ENV, envs)
