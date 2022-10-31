@@ -160,10 +160,10 @@ if __name__ == "__main__":
     # Evaluation Callback
 
     # Create vectorized environments:
-    if saving_criteria == "score":
-        eval_envs = make_parallel_envs(env_name, config_score, num_env=16)
-    elif saving_criteria == "dense_rewards":
-        eval_envs = make_parallel_envs(env_name, config, num_env=16)
+    if saving_criteria=="score":
+        eval_envs = make_parallel_envs(env_name, config_score, num_env=1)
+    elif saving_criteria=="dense_rewards":
+        eval_envs = make_parallel_envs(env_name, config, num_env=1)
     else:
         raise ValueError("Unrecognized saving criteria")
 

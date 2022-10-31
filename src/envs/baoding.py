@@ -316,7 +316,6 @@ class CustomBaodingP2Env(BaodingEnvV1):
         noise_fingers=0,
         **kwargs,
     ):
-
         # user parameters
         self.task_choice = task_choice
         self.which_task = (
@@ -333,9 +332,6 @@ class CustomBaodingP2Env(BaodingEnvV1):
         self.overlap_probability = overlap_probability
         self.noise_fingers = noise_fingers
         self.limit_init_angle = limit_init_angle
-        self.beta_init_angle = beta_init_angle
-        self.beta_ball_size = beta_ball_size
-        self.beta_ball_mass = beta_ball_mass
 
         # balls start at these angles
         #   1= yellow = top right
@@ -531,7 +527,6 @@ class CustomBaodingP2Env(BaodingEnvV1):
                 )
 
             self.ball_2_starting_angle = self.ball_1_starting_angle - np.pi
-
         # reset counters
         self.counter = 0
         self.x_radius = self.np_random.uniform(
@@ -571,7 +566,6 @@ class CustomBaodingP2Env(BaodingEnvV1):
                 * (self.obj_mass_range["high"] - self.obj_mass_range["low"])
                 + self.obj_mass_range["low"]
             )
-
         # balls friction changes
         self.sim.model.geom_friction[self.object1_gid] = self.np_random.uniform(
             **self.obj_friction_range
@@ -599,7 +593,6 @@ class CustomBaodingP2Env(BaodingEnvV1):
                 * (self.obj_size_range["high"] - self.obj_size_range["low"])
                 + self.obj_size_range["low"]
             )
-
         # reset scene
         qpos = self.init_qpos.copy() if reset_pose is None else reset_pose
         qvel = self.init_qvel.copy() if reset_vel is None else reset_vel

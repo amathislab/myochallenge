@@ -8,12 +8,12 @@ from src.envs.environment_factory import EnvironmentFactory
 
 # evaluation parameters:
 render = False
-num_episodes = 1_000
+num_episodes = 5_000
 
-env_name = "CustomMyoBaodingBallsP2"
+env_name = "MyoBaodingBallsP2"
 
 # Path to normalized Vectorized environment and best model (if not first task)
-load_folder = "output/training/2022-10-31/14-06-01_final-everything_v2-2_beta-dist_score-on-final"
+load_folder = "trained_models/baoding_phase2/15-23-15"
 PATH_TO_NORMALIZED_ENV = load_folder + "/training_env.pkl"
 PATH_TO_PRETRAINED_NET = load_folder + "/best_model.zip"
 
@@ -23,16 +23,10 @@ config = {
         "pos_dist_1": 0,
         "pos_dist_2": 0,
         "act_reg": 0,
-        "alive": 0,
         "solved": 5,
         "done": 0,
         "sparse": 0,
     },
-    "enable_rsi": False,
-    "rsi_probability": 0,
-    'balls_overlap': False,
-    "overlap_probability": 0,
-    "limit_init_angle": False,
     "goal_time_period": [4, 6],   # phase 2: (4, 6)
     "goal_xrange": (0.020, 0.030),  # phase 2: (0.020, 0.030)
     "goal_yrange": (0.022, 0.032),  # phase 2: (0.022, 0.032)
@@ -58,7 +52,7 @@ def make_parallel_envs(env_name, env_config, num_env, start_index=0):   # pylint
 
 if __name__ == "__main__":
     # Create vectorized environments:
-    envs = make_parallel_envs(env_name, config, num_env=16)
+    envs = make_parallel_envs(env_name, config, num_env=1)
 
     # Normalize environment:
     envs = VecNormalize.load(PATH_TO_NORMALIZED_ENV, envs)
@@ -105,7 +99,7 @@ if __name__ == "__main__":
         perfs.append(cum_rew)
         print("Episode", i, ", len:", step, ", cum rew: ", cum_rew)
 
-        if (i + 1) % 50 == 0:
+        if (i + 1) % 10 == 0:
             print(f"\nEpisode {i+1}/{num_episodes}")
             print(f"Average len: {np.mean(lens):.2f} +/- {np.std(lens):.2f}")
             print(f"Average rew: {np.mean(perfs):.2f} +/- {np.std(perfs):.2f}\n")
