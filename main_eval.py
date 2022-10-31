@@ -9,10 +9,10 @@ from src.envs.environment_factory import EnvironmentFactory
 env_name = "CustomMyoBaodingBallsP2"
 
 # Path to normalized Vectorized environment (if not first task)
-PATH_TO_NORMALIZED_ENV = "trained_models/baoding_phase2/14-15-06/training_env.pkl"  # "trained_models/normalized_env_original"
+PATH_TO_NORMALIZED_ENV = "trained_models/baoding_phase2/14-15-06/training_env.pkl"
 
 # Path to pretrained network (if not first task)
-PATH_TO_PRETRAINED_NET = "trained_models/baoding_phase2/14-15-06/best_model.zip"  # "trained_models/best_model.zip"
+PATH_TO_PRETRAINED_NET = "trained_models/baoding_phase2/14-15-06/best_model.zip"
 
 
 # Reward structure and task parameters:
@@ -37,17 +37,14 @@ config = {
     # Randomization in physical properties of the baoding balls
     'obj_size_range': (0.018, 0.024),    #(0.018, 0.024)   # Object size range. Nominal 0.022
     'obj_mass_range': (0.030, 0.300),    #(0.030, 0.300)   # Object weight range. Nominal 43 gms
-    'obj_friction_change': (0.2, 0.001, 0.00002), # (0.2, 0.001, 0.00002) nominal: 1.0, 0.005, 0.0001
+    'obj_friction_change': (0.2, 0.001, 0.00002), # (0.2, 0.001, 0.00002)
     'task_choice': 'random'
 }
 
 
-
-
-
 # Function that creates and monitors vectorized environments:
-def make_parallel_envs(env_name, env_config, num_env, start_index=0):
-    def make_env(rank):
+def make_parallel_envs(env_name, env_config, num_env, start_index=0):   # pylint: disable=redefined-outer-name
+    def make_env(_):
         def _thunk():
             env = EnvironmentFactory.create(env_name, **env_config)
             return env
