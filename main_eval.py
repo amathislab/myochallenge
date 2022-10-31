@@ -1,7 +1,5 @@
 import numpy as np
 from sb3_contrib import RecurrentPPO
-from stable_baselines3.common.callbacks import EvalCallback
-from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import VecNormalize
 from stable_baselines3.common.vec_env.subproc_vec_env import SubprocVecEnv
 
@@ -32,7 +30,7 @@ config = {
     "rsi_probability": 0,
     'balls_overlap': False,
     "overlap_probability": 0,
-    "limit_init_angle": np.pi,
+    "limit_init_angle": False,
     "goal_time_period": [4, 6],   # phase 2: (4, 6)
     "goal_xrange": (0.020, 0.030),  # phase 2: (0.020, 0.030)
     "goal_yrange": (0.022, 0.032),  # phase 2: (0.022, 0.032)
@@ -74,7 +72,7 @@ if __name__ == "__main__":
     eval_env = EnvironmentFactory.create(env_name, **config)
 
     # Enjoy trained agent
-    num_episodes = 200
+    num_episodes = 1_000
     perfs = []
     lens = []
     for i in range(num_episodes):
@@ -101,4 +99,8 @@ if __name__ == "__main__":
         lens.append(step)
         perfs.append(cum_rew)
         print("Episode", i, ", len:", step, ", cum rew: ", cum_rew)
-    print(("Average len:", np.mean(lens), "     ", "Average rew:", np.mean(perfs)))
+
+        if (i + 1) % 50 == 0:
+            print(f"\nEpisode {i+1}/{num_episodes}")
+            print(f"Average len: {np.mean(lens)} +/- {np.std(lens)}")
+            print(f"Average rew: {np.mean(perfs)} +/- {np.std(perfs)}")
