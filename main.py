@@ -152,16 +152,16 @@ if __name__ == "__main__":
 
     # Create vectorized environments:
     if saving_criteria=="score":
-        eval_envs = make_parallel_envs(env_name, config_score, num_env=16)
+        eval_envs = make_parallel_envs(env_name, config_score, num_env=1)
     elif saving_criteria=="dense_rewards":
-        eval_envs = make_parallel_envs(env_name, config, num_env=16)
+        eval_envs = make_parallel_envs(env_name, config, num_env=1)
     else:
         raise ValueError('Unrecognized saving criteria')
 
     if FIRST_TASK:
         eval_envs = VecNormalize(eval_envs)
     else:
-        eval_envs = VecNormalize.load(PATH_TO_NORMALIZED_ENV, eval_envs) 
+        eval_envs = VecNormalize.load(PATH_TO_NORMALIZED_ENV, eval_envs)
 
     env_dump_callback = EnvDumpCallback(TENSORBOARD_LOG, verbose=0)
 
