@@ -8,12 +8,12 @@ from src.envs.environment_factory import EnvironmentFactory
 
 # evaluation parameters:
 render = False
-num_episodes = 5_000
+num_episodes = 2_000
 
 env_name = "MyoBaodingBallsP2"
 
 # Path to normalized Vectorized environment and best model (if not first task)
-load_folder = "trained_models/baoding_phase2/15-23-15"
+load_folder = "trained_models/baoding_phase2/final_pablo"
 PATH_TO_NORMALIZED_ENV = load_folder + "/training_env.pkl"
 PATH_TO_PRETRAINED_NET = load_folder + "/best_model.zip"
 
