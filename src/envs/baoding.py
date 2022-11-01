@@ -299,7 +299,7 @@ class HistoryBaodingEnv(CustomBaodingEnv, HistoryMixin):
         seed=None,
         include_adapt_state=True,
         num_memory_steps=30,
-        **kwargs
+        **kwargs,
     ):
         self._init_done = False
         super().__init__(
@@ -311,15 +311,15 @@ class HistoryBaodingEnv(CustomBaodingEnv, HistoryMixin):
 
     def reset(self):
         state = super().reset()
-        return self.create_rma_reset_state(state)
-    
+        return self.create_history_reset_state(state)
+
     def step(self, action):
         state, reward, done, info = super().step(action)
         if self._init_done:
-            state = self.create_rma_step_state(state, action)
+            state = self.create_history_step_state(state, action)
         return state, reward, done, info
-    
-    
+
+
 class CustomBaodingP2Env(BaodingEnvV1):
     def _setup(
         self,

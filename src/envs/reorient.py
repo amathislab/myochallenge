@@ -1,11 +1,13 @@
 import collections
-
-import gym
+from typing import OrderedDict
 import numpy as np
+import gym
 from myosuite.envs.myo.base_v0 import BaseV0
 from myosuite.envs.myo.myochallenge.reorient_v0 import ReorientEnvV0
-from myosuite.utils.quat_math import euler2quat, mat2euler
+from myosuite.utils.quat_math import euler2quat
 from myosuite.envs.env_base import MujocoEnv
+from src.envs.env_mixins import HistoryMixin
+from myosuite.utils.obj_vec_dict import ObsVecDict
 
 
 class CustomReorientEnv(ReorientEnvV0):
@@ -163,3 +165,152 @@ class CustomReorientEnv(ReorientEnvV0):
         self.sim.model.body_quat[self.goal_bid] = euler2quat(
             np.array([goal_rot_x, goal_rot_y, goal_rot_z])
         )
+
+
+class HistoryReorientEnv(CustomReorientEnv, HistoryMixin):
+    def __init__(
+        self,
+        model_path,
+        obsd_model_path=None,
+        seed=None,
+        include_adapt_state=True,
+        num_memory_steps=30,
+        **kwargs,
+    ):
+        self._init_done = False
+        super().__init__(
+            model_path, obsd_model_path=obsd_model_path, seed=seed, **kwargs
+        )
+        self.action_dim = self.sim.model.nu
+        self._init_addon(include_adapt_state, num_memory_steps)
+        self._init_done = True
+
+    def reset(self):
+        state = super().reset()
+        return self.create_history_reset_state(state)
+
+    def step(self, action):
+        state, reward, done, info = super().step(action)
+        if self._init_done:
+            state = self.create_history_step_state(state, action)
+        return state, reward, done, info
+
+
+class GoalHistoryReorientEnv(HistoryReorientEnv):
+    def __init__(
+        self,
+        model_path,
+        obsd_model_path=None,
+        seed=None,
+        include_adapt_state=True,
+        num_memory_steps=30,
+        **kwargs,
+    ):
+        self.current_timestep = np.zeros(1)
+        HistoryReorientEnv.__init__(
+            self,
+            model_path,
+            obsd_model_path=obsd_model_path,
+            seed=seed,
+            include_adapt_state=include_adapt_state,
+            num_memory_steps=num_memory_steps,
+            **kwargs,
+        )
+        self.history_obsvecdict = ObsVecDict()
+        random_obs = self.observation_space.sample()
+        random_obs.update({"t": self.current_timestep})
+        self.history_obs_keys = list(random_obs.keys())
+        _, random_obs_vec = self.history_obsvecdict.obsdict2obsvec(random_obs, self.history_obs_keys)
+        obs_dict = {
+            "observation": gym.spaces.Box(
+                -10 * np.ones(random_obs_vec.size), 10 * np.ones(random_obs_vec.size), dtype=np.float32
+            ),
+            "achieved_goal": gym.spaces.Box(
+                -10 * np.ones(6), 10 * np.ones(6), dtype=np.float32
+            ),
+            "desired_goal": gym.spaces.Box(
+                -10 * np.ones(6), 10 * np.ones(6), dtype=np.float32
+            ),
+        }
+        self.observation_space = gym.spaces.Dict(obs_dict)
+
+    def compute_reward(self, achieved_goal, desired_goal, info):
+        goal_pos = desired_goal[:, :3]
+        obj_pos = achieved_goal[:, :3]
+        goal_rot = desired_goal[:, 3:]
+        obj_rot = achieved_goal[:, 3:]
+        pos_err = goal_pos - obj_pos - self.goal_obj_offset
+        rot_err = goal_rot - obj_rot
+        # pos_dist = np.abs(np.linalg.norm(pos_err, axis=-1))
+        # rot_dist = np.abs(np.linalg.norm(rot_err, axis=-1))
+        for p_e, r_e, info_el in zip(pos_err, rot_err, info):
+            info_el["obs_dict"]["pos_err"] = p_e
+            info_el["obs_dict"]["rot_err"] = r_e
+        
+        reward_vec = np.vectorize(self.compute_reward_from_info_element)(info)
+
+        return reward_vec
+
+    def reset(self):
+        self.current_timestep = np.zeros(1)
+        obs = HistoryReorientEnv.reset(self)
+        obs.update({"t": self.current_timestep})
+        _, obs_vec = self.history_obsvecdict.obsdict2obsvec(obs, self.history_obs_keys)
+        goal_obs = self.get_goal_obs(obs_vec)
+        return goal_obs
+        
+    def step(self, action):
+        self.current_timestep += 1
+        obs, reward, done, info = HistoryReorientEnv.step(self, action)
+        if self._init_done:
+            obs.update({"t": self.current_timestep})
+            _, obs = self.history_obsvecdict.obsdict2obsvec(obs, self.history_obs_keys)
+            obs  = self.get_goal_obs(obs)
+        return obs, reward, done, info
+    
+    def get_goal_obs(self, observation):
+        achieved_goal = np.concatenate((self.obs_dict["obj_pos"], self.obs_dict["obj_rot"]))
+        desired_goal = np.concatenate((self.obs_dict["goal_pos"], self.obs_dict["goal_rot"]))
+        return OrderedDict([
+            ("observation", observation),
+            ("achieved_goal", achieved_goal),
+            ("desired_goal", desired_goal)
+        ])
+        
+    def compute_reward_from_info_element(self, info_element):
+        obs_dict = info_element["obs_dict"]
+        pos_dist = np.abs(np.linalg.norm(obs_dict["pos_err"], axis=-1))
+        rot_dist = np.abs(np.linalg.norm(obs_dict["rot_err"], axis=-1))
+        act_mag = (
+            np.linalg.norm(obs_dict["act"], axis=-1) / self.sim.model.na
+            if self.sim.model.na != 0
+            else 0
+        )
+        drop = pos_dist > self.drop_th
+
+        rwd_dict = collections.OrderedDict(
+            (
+                # Perform reward tuning here --
+                # Update Optional Keys section below
+                # Update reward keys (DEFAULT_RWD_KEYS_AND_WEIGHTS) accordingly to update final rewards
+                # Examples: Env comes pre-packaged with two keys pos_dist and rot_dist
+                # Optional Keys
+                ("pos_dist", -1.0 * pos_dist),
+                ("rot_dist", -1.0 * rot_dist),
+                ("alive", ~drop),
+                # Must keys
+                ("act_reg", -1.0 * act_mag),
+                ("sparse", -rot_dist - 10.0 * pos_dist),
+                (
+                    "solved",
+                    (pos_dist < self.pos_th)
+                    and (rot_dist < self.rot_th)
+                    and (not drop),
+                ),
+                ("done", drop),
+            )
+        )
+        reward = np.sum(
+            [wt * rwd_dict[key] for key, wt in self.rwd_keys_wt.items()], axis=0
+        )
+        return reward

@@ -38,10 +38,10 @@ class HistoryMixin:
                 [], maxlen=num_memory_steps
             )  # Storing actions from newest to oldest
         obs_space = gym.spaces.Dict(obs_dict)
-        #self.robot.observation_space = obs_space
+        # self.robot.observation_space = obs_space
         self.observation_space = obs_space
 
-    def create_rma_reset_state(self, x_t):
+    def create_history_reset_state(self, x_t):
         """Function to augment the state returned by the reset of a random perturbation
         environment
 
@@ -66,7 +66,7 @@ class HistoryMixin:
             )
         return return_dict
 
-    def create_rma_step_state(self, state, action):
+    def create_history_step_state(self, state, action):
         """Function to augment the state returned by the step function of a random
         perturbation environment
 
