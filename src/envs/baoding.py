@@ -4,12 +4,12 @@ import random
 
 import numpy as np
 from myosuite.envs.myo.base_v0 import BaseV0
-from myosuite.envs.myo.myochallenge.baoding_v1 import (WHICH_TASK,
-                                                       BaodingEnvV1, Task)
+from myosuite.envs.myo.myochallenge.baoding_v1 import WHICH_TASK, BaodingEnvV1, Task
 from sb3_contrib import RecurrentPPO
-from src.envs.environment_factory import EnvironmentFactory
 from stable_baselines3.common.vec_env import VecNormalize
 from stable_baselines3.common.vec_env.dummy_vec_env import DummyVecEnv
+
+from envs.environment_factory import EnvironmentFactory
 
 
 class CustomBaodingEnv(BaodingEnvV1):
@@ -648,13 +648,14 @@ class CustomBaodingP2Env(BaodingEnvV1):
 
 
 class MixtureModelBaodingEnv(CustomBaodingP2Env):  # pylint: disable=abstract-method
-    def __init__(self,
+    def __init__(
+        self,
         base_model_path: str,
         base_env_path: str,
         base_env_name: str,
         base_env_config: dict,
         n_steps_base_model: int,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(**kwargs)
         if n_steps_base_model is not None:
@@ -678,11 +679,8 @@ class MixtureModelBaodingEnv(CustomBaodingP2Env):  # pylint: disable=abstract-me
 
         return VecNormalize.load(env_path, env)
 
-    def load_model_and_env(self,
-        model_path: str,
-        env_path: str,
-        env_name: str,
-        config: dict = {}
+    def load_model_and_env(
+        self, model_path: str, env_path: str, env_name: str, config: dict = {}
     ):
         custom_objects = {
             "learning_rate": 0.0,
@@ -690,7 +688,9 @@ class MixtureModelBaodingEnv(CustomBaodingP2Env):  # pylint: disable=abstract-me
             "clip_range": 0.0,
         }
         envs = self.load_normalized_envs(env_name, env_path, config)
-        model = RecurrentPPO.load(model_path, env=envs, device="cpu", custom_objects=custom_objects)
+        model = RecurrentPPO.load(
+            model_path, env=envs, device="cpu", custom_objects=custom_objects
+        )
 
         return model, envs
 
@@ -706,9 +706,9 @@ class MixtureModelBaodingEnv(CustomBaodingP2Env):  # pylint: disable=abstract-me
                 self.env_base.normalize_obs(obs),
                 state=lstm_states,
                 episode_start=episode_starts,
-                deterministic=True
+                deterministic=True,
             )
-            obs, _, dones, _ = self.step(action)    # counter increases here
+            obs, _, dones, _ = self.step(action)  # counter increases here
             episode_starts = dones
 
         return obs
