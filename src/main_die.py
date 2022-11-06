@@ -1,3 +1,4 @@
+# pylint: disable=unspecified-encoding, redefined-outer-name, protected-access, unused-argument
 import copy
 import json
 import os
