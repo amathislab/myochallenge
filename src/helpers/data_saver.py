@@ -1,8 +1,10 @@
 import collections
-import numpy as np
+
 import pandas as pd
 
-Transition = collections.namedtuple("Transition", ["episode_id", "obs", "action", "next_obs", "reward", "done", "info"])
+Transition = collections.namedtuple(
+    "Transition", ["episode_id", "obs", "action", "next_obs", "reward", "done", "info"]
+)
 
 
 class DataSaver:
@@ -14,7 +16,9 @@ class DataSaver:
         pass
 
     def append_step(self, obs, action, next_obs, reward, done, info):
-        self.data.append(Transition(self.episode_id, obs, action, next_obs, reward, done, info))
+        self.data.append(
+            Transition(self.episode_id, obs, action, next_obs, reward, done, info)
+        )
 
     def end_rollout(self):
         self.episode_id += 1
@@ -26,4 +30,3 @@ class DataSaver:
     def save_df(self, out_path):
         df = pd.DataFrame(self.data)
         df.to_csv(out_path)
-

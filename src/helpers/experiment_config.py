@@ -1,12 +1,14 @@
-import json
 import collections.abc
+import json
+
 from ray.rllib.agents.a3c import A3CTrainer
 from ray.rllib.agents.ddpg import DDPGTrainer
 from ray.rllib.agents.dqn import ApexTrainer, DQNTrainer
 from ray.rllib.agents.impala import ImpalaTrainer
-from ray.rllib.agents.ppo import PPOTrainer, APPOTrainer
+from ray.rllib.agents.ppo import APPOTrainer, PPOTrainer
 from ray.rllib.agents.sac import SACTrainer
-from src.metrics.callbacks_factory import CallbacksFactory
+
+from metrics.callbacks_factory import CallbacksFactory
 
 
 def update(d, u):
@@ -68,7 +70,7 @@ class ExperimentConfig:
         Args:
             path (str): path to the output json
         """
-        with open(path, "w") as file:
+        with open(path, "w") as file:  # pylint: disable=unspecified-encoding
             json.dump(self.json_config, file)
 
     def get_trainer_config(self):

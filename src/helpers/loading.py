@@ -1,6 +1,6 @@
-from src.models.model_factory import ModelFactory
-from src.envs.environment_factory import EnvironmentFactory
-from src.helpers.experiment_config import ExperimentConfig
+from envs.environment_factory import EnvironmentFactory
+from helpers.experiment_config import ExperimentConfig
+from models.model_factory import ModelFactory
 
 
 def get_env_and_config(config_path, update_params=None):
