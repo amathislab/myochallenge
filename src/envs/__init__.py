@@ -1,9 +1,9 @@
-import gym
 import os
+
+import gym
 import myosuite
 import numpy as np
-from definitions import ROOT_DIR
-
+from definitions import ROOT_DIR  # pylint: disable=import-error
 
 myosuite_path = (
     os.path.join(ROOT_DIR, "data", "myosuite")
@@ -40,6 +40,25 @@ gym.envs.registration.register(id='CustomMyoChallengeDieReorientP1-v0',
 gym.envs.registration.register(
     id="CustomMyoChallengeBaodingP2-v1",
     entry_point="src.envs.baoding:CustomBaodingP2Env",
+    max_episode_steps=200,
+    kwargs={
+        "model_path": myosuite_path + "/assets/hand/myo_hand_baoding.mjb",
+        'normalize_act': True,
+        'goal_time_period': (4, 6),
+        'goal_xrange': (0.020, 0.030),
+        'goal_yrange': (0.022, 0.032),
+        # Randomization in physical properties of the baoding balls
+        'obj_size_range': (0.018, 0.024),       # Object size range. Nominal 0.022
+        'obj_mass_range': (0.030, 0.300),       # Object weight range. Nominal 43 gms
+        'obj_friction_change': (0.2, 0.001, 0.00002), # nominal: 1.0, 0.005, 0.0001
+        'task_choice': 'random'
+    }
+)
+
+# MyoChallenge Baoding: MixtureModelEnv
+gym.envs.registration.register(
+    id="MixtureModelBaoding-v1",
+    entry_point="src.envs.baoding:MixtureModelBaodingEnv",
     max_episode_steps=200,
     kwargs={
         "model_path": myosuite_path + "/assets/hand/myo_hand_baoding.mjb",
