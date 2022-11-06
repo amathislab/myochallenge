@@ -137,8 +137,5 @@ dmypy.json
 # Project
 /output
 
-# VSCode
-.vscode/
-
 # Tensorboard
 .monitor.csv
