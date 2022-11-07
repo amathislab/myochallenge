@@ -1,4 +1,4 @@
-from ray.rllib.agents.callbacks import DefaultCallbacks
+from ray.rllib.algorithms.callbacks import DefaultCallbacks
 
 from metrics.callbacks import FullInfoCallbacks, MyoInfoCallbacks
 
