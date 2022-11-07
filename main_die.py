@@ -20,17 +20,20 @@ from src.metrics.sb_callbacks import EnvDumpCallback
 env_name = "CustomMyoReorientP1"
 
 # whether this is the first task of the curriculum (True) or it is loading a previous task (False)
-FIRST_TASK = True
+FIRST_TASK = False
 
 # Path to normalized Vectorized environment (if not first task)
-PATH_TO_NORMALIZED_ENV = "output/training/2022-10-12/11-59-31_die_orient_random_pos_0_01_rot_0_2/training_env.pkl"
+PATH_TO_NORMALIZED_ENV = "output/training/2022-10-21/11-50-45_die_orient_rotation_y_both_ways_150_steps/training_env.pkl"
 
 # Path to pretrained network (if not first task)
 PATH_TO_PRETRAINED_NET = (
-    "output/training/2022-10-12/11-59-31_die_orient_random_pos_0_01_rot_0_2/best_model.zip"
+    "output/training/2022-10-21/11-50-45_die_orient_rotation_y_both_ways_150_steps/best_model.zip"
 )
 # Tensorboard log (will save best model during evaluation)
-now = datetime.now().strftime("%Y-%m-%d/%H-%M-%S") + "_die_orient_rotation_y_both_ways_150_steps"
+now = (
+    datetime.now().strftime("%Y-%m-%d/%H-%M-%S")
+    + "_die_orient_rotation_y_z_both_ways_150_steps"
+)
 TENSORBOARD_LOG = os.path.join("output", "training", now)
 
 
@@ -55,7 +58,7 @@ config = {
     "rsi_distance_rot": 0,
     "goal_rot_x": [(0, 0)],
     "goal_rot_y": [(-1.57, -1.57), (1.57, 1.57)],
-    "goal_rot_z": [(0, 0)],
+    "goal_rot_z": [(-1.57, -1.57), (1.57, 1.57)],
     "max_episode_steps": 150,
 }
 
