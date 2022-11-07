@@ -2,8 +2,6 @@ import numpy as np
 from sb3_contrib import RecurrentPPO
 from stable_baselines3.common.vec_env import VecNormalize
 from stable_baselines3.common.vec_env.subproc_vec_env import SubprocVecEnv
-
-from main import PATH_TO_PRETRAINED_NET
 from src.envs.environment_factory import EnvironmentFactory
 
 # evaluation parameters:
