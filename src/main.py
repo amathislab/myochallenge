@@ -13,7 +13,8 @@ from stable_baselines3.common.vec_env.subproc_vec_env import SubprocVecEnv
 
 from envs.environment_factory import EnvironmentFactory
 from metrics.custom_callbacks import EvaluateLSTM
-from metrics.sb_callbacks import EnvDumpCallback
+from metrics.custom_callbacks import EnvDumpCallback
+
 
 env_name = "CustomMyoBaodingBallsP2"
 
