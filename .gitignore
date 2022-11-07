@@ -140,6 +140,3 @@ dmypy.json
 
 # Tensorboard
 .monitor.csv
-
-# VS Code
-.vscode/*
