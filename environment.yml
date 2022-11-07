@@ -22,8 +22,6 @@ dependencies:
     - tabulate==0.8.9
     - tensorboard==2.5.0
     - tensorboardx==2.2
-    - tensorflow==2.4.1
-    - tensorflow-probability==0.12.2
     - torch==1.10.1
     - gputil==1.4.0
     - scikit-learn==0.24.1
