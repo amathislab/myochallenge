@@ -1,15 +1,14 @@
 import json
 import os
+from abc import ABC
 from dataclasses import dataclass, field
-from typing import Protocol, runtime_checkable
 
 from sb3_contrib import RecurrentPPO
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.vec_env import VecNormalize
 
 
-@runtime_checkable
-class Trainer(Protocol):
+class Trainer(ABC):
     """
     Protocol to train a library-independent RL algorithm on a gym environment.
     """
@@ -24,7 +23,7 @@ class Trainer(Protocol):
     def _init_agent(self) -> None:
         """Initialize the agent."""
 
-    def train(self, total_timesteps) -> None:
+    def train(self, total_timesteps: int) -> None:
         """Train agent on environment for total_timesteps episdodes."""
 
 
@@ -63,7 +62,7 @@ class BaodingTrainer:
             **self.model_config,
         )
 
-    def train(self, total_timesteps) -> None:
+    def train(self, total_timesteps: int) -> None:
         self.agent.learn(
             total_timesteps=total_timesteps,
             callback=self.callbacks,
