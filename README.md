@@ -8,4 +8,4 @@ Listed in `requirements.txt`. Note that there is a version error with some packa
 
 ## Usage
 
-Run `python src/main_baoding.py`. Note that this starts training from one of the pre-trained models in our curriculum. You can find all the trained models along with the scripts used to train them and the environment configurations [here](trained_models/baoding_winning_models/).
+Run `python src/main_baoding.py`. Note that this starts training from one of the pre-trained models in our curriculum. You can find all the trained models along with the scripts used to train them and the environment configurations [here](trained_models/curriculum_steps_complete_baoding_winner/).
