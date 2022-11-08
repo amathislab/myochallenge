@@ -7,18 +7,18 @@
 3. Curriculum learning to guide and stabilize training throughout
 4. (Optional) Hierarchical mixture of ensembles for dealing with specialized tasks in phase 2
 
-### Recurrent LSTM layers
+### 1. Recurrent LSTM layers
 
-The first key component in our model is the recurrent units in both our actor and critic networks. The first layer in each was an LSTM layer, which was crucial to deal with partial observations not only because the environment had no velocity or acceleration information, but also because the actions have really long-term consequences - effects of actions last dozens of timesteps after it has been originally executed.
+The first key component in our model is the recurrent units in both the actor and critic networks of our on-policy algorithm. The first layer in each was an LSTM layer, which was crucial to deal with partial observations not only because the environment had no velocity or acceleration information, but also because the actions have really long-term consequences - effects of actions last dozens of timesteps after it has been originally executed.
 
-### Reference State Initiatlization (RSI)
+### 2. Reference State Initiatlization (RSI)
 
 The second key component we used was Reference State Initialization (RSI). The schematic below ([source](https://bair.berkeley.edu/blog/2018/04/10/virtual-stuntman/)) helps us in summarizing the idea:
-![FSI](images/FSI.png) ![RSI](images/RSI.png)
+<img src="images/FSI.png" width="500"> <img src="images/RSI.png" width="500">
 
 The insight here is that if we initialize the balls at various points in the target trajectory, then the model will experience a much higher density of rewards throughout the final trajectory much more efficiently.
 
-### Curriculum learning
+### 3. Curriculum learning
 
 Third, we used a curriculum of training that gradually introduced the tougher aspects of the task.
 
@@ -26,7 +26,7 @@ For phase 1, we increased the rotation speed gradually following the intuition t
 
 For phase 2, following the same intuition, at slower rotation periods, we gradually introduced domain randomization, i.e. noisy task physics including ball size & mass, friction, and how far the targets spawned from the balls. Once the tasks were learned well at slower speeds, we gradually increased the rotation speeds. Arguably, a large portion of training went into adapting to the noisy physics, and one of the key changes that we had to make in order to be successful at faster rotation periods was to use much larger batch sizes for our networks to step meaningfully in the loss landscape. The full list of hyperparameters are in the appendix.
 
-### Hierarchical mixture of expert ensembles
+### 4. Hierarchical mixture of expert ensembles
 
 > !NOTE: Optional and experimental
 >
