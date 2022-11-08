@@ -1,11 +1,11 @@
+# pylint: disable=attribute-defined-outside-init, dangerous-default-value, protected-access, abstract-method, arguments-renamed
 import collections
 
-import gym
 import numpy as np
+from myosuite.envs.env_base import MujocoEnv
 from myosuite.envs.myo.base_v0 import BaseV0
 from myosuite.envs.myo.myochallenge.reorient_v0 import ReorientEnvV0
-from myosuite.utils.quat_math import euler2quat, mat2euler
-from myosuite.envs.env_base import MujocoEnv
+from myosuite.utils.quat_math import euler2quat
 
 
 class CustomReorientEnv(ReorientEnvV0):

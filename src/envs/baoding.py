@@ -1,9 +1,15 @@
-# pylint: disable=attribute-defined-outside-init, dangerous-default-value, protected-access, abstract-method, arguments-renamed
+# pylint: disable=attribute-defined-outside-init, dangerous-default-value, protected-access, abstract-method, arguments-renamed, import-error
 import collections
 import random
+
 import numpy as np
 from myosuite.envs.myo.base_v0 import BaseV0
 from myosuite.envs.myo.myochallenge.baoding_v1 import WHICH_TASK, BaodingEnvV1, Task
+from sb3_contrib import RecurrentPPO
+from stable_baselines3.common.vec_env import VecNormalize
+from stable_baselines3.common.vec_env.dummy_vec_env import DummyVecEnv
+
+from envs.environment_factory import EnvironmentFactory
 
 
 class CustomBaodingEnv(BaodingEnvV1):
@@ -639,3 +645,70 @@ class CustomBaodingP2Env(BaodingEnvV1):
             self.set_state(qpos, qvel)
 
         return self.get_obs()
+
+
+class MixtureModelBaodingEnv(CustomBaodingP2Env):  # pylint: disable=abstract-method
+    def __init__(
+        self,
+        base_model_path: str,
+        base_env_path: str,
+        base_env_name: str,
+        base_env_config: dict,
+        n_steps_base_model: int,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        if n_steps_base_model is not None:
+            self.n_steps_base_model = n_steps_base_model
+        else:
+            self.n_steps_base_model = 20
+
+        self.model_base, self.env_base = self.load_model_and_env(
+            model_path=base_model_path,
+            env_path=base_env_path,
+            env_name=base_env_name,
+            config=base_env_config,
+        )
+        self.env_base.training = False
+
+    @staticmethod
+    def load_normalized_envs(env_name: str, env_path: str, config: dict = {}):
+        """Load normalized environments from base environment path."""
+        env = EnvironmentFactory.register(env_name, **config)
+        env = DummyVecEnv([lambda: env])
+
+        return VecNormalize.load(env_path, env)
+
+    def load_model_and_env(
+        self, model_path: str, env_path: str, env_name: str, config: dict = {}
+    ):
+        custom_objects = {
+            "learning_rate": 0.0,
+            "lr_schedule": 0.0,
+            "clip_range": 0.0,
+        }
+        envs = self.load_normalized_envs(env_name, env_path, config)
+        model = RecurrentPPO.load(
+            model_path, env=envs, device="cpu", custom_objects=custom_objects
+        )
+
+        return model, envs
+
+    def reset(self, reset_pose=None, reset_vel=None, reset_goal=None, time_period=None):
+        obs = super().reset()
+
+        # Take the first 19 steps with the base model; return the 20th obs as first
+        lstm_states = None
+        episode_starts = np.ones((1,), dtype=bool)
+
+        while self.counter < self.n_steps_base_model:
+            action, lstm_states = self.model_base.predict(
+                self.env_base.normalize_obs(obs),
+                state=lstm_states,
+                episode_start=episode_starts,
+                deterministic=True,
+            )
+            obs, _, dones, _ = self.step(action)  # counter increases here
+            episode_starts = dones
+
+        return obs
