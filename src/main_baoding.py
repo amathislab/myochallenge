@@ -18,9 +18,9 @@ ENV_NAME = "CustomMyoBaodingBallsP2"
 now = datetime.now().strftime("%Y-%m-%d/%H-%M-%S")
 TENSORBOARD_LOG = os.path.join(ROOT_DIR, "output", "training", now)
 
-load_folder = "output/training/2022-11-03/01-56-54/"
-PATH_TO_NORMALIZED_ENV = load_folder + "final_env.pkl"
-PATH_TO_PRETRAINED_NET = load_folder + "final_model.pkl"
+load_folder = "trained_models/baoding_phase2/alberto_518/"
+PATH_TO_NORMALIZED_ENV = load_folder + "training_env.pkl"
+PATH_TO_PRETRAINED_NET = load_folder + "best_model.zip"
 
 # Reward structure and task parameters:
 config = {
