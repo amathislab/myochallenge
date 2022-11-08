@@ -8,7 +8,7 @@ from stable_baselines3.common.vec_env.subproc_vec_env import SubprocVecEnv
 
 from definitions import ROOT_DIR
 from envs.environment_factory import EnvironmentFactory
-from metrics.sb_callbacks import EnvDumpCallback
+from metrics.custom_callbacks import EnvDumpCallback
 from train.trainer import BaodingTrainer
 
 # define constants
