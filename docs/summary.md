@@ -16,7 +16,7 @@ The first key component in our model is the recurrent units in both the actor an
 The second key component we used was Reference State Initialization (RSI). The schematic below ([source](https://bair.berkeley.edu/blog/2018/04/10/virtual-stuntman/)) helps us in summarizing the idea:
 <img src="images/FSI.png" width="500"> <img src="images/RSI.png" width="500">
 
-The insight here is that if we initialize the balls at various points in the target trajectory, then the model will experience a much higher density of rewards throughout the final trajectory much more efficiently.
+The insight here is that if we initialize the balls at various points in the target trajectory during training, then the model will experience a much higher density of rewards throughout the final trajectory much more efficiently.
 
 ### 3. Curriculum learning
 
