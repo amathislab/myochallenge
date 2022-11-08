@@ -40,9 +40,9 @@ There were a couple of observations that led us to choose this approach. Crucial
 - target positions far from the balls' initial locations
   - this was particularly disruptive in the hold task because the network learned to make the balls roughly follow the vector given by the "target error". Since the targets do not move for the hold task, the balls run into each other when the targets spawn roughly over $0.6\pi$ away from the balls.
 
-Thus, trained a classifier to take in the first $k$ observations and predict the identity of the task (hold vs other), and also trained a hold network to take over from the base network at timestep $k$ to perform the task. Even with this change, the hold network did not perform well at large separations of the initial ball and target positions. So we trained another set of specialist hold networks that were preferentially exposed to targets and balls spawning roughly opposite of each other, and used this ensemble of hold networks with the base network and classifier. 
+To separately target these special cases, we trained a classifier to predict the identity of the task (hold vs other) from the first $k$ observations, and also trained a hold network to take over from the base network at timestep $k$ to perform the task. Even with this change, the hold network did not perform well at large separations of the initial ball and target positions. So we trained another set of specialist hold networks that were preferentially exposed to targets and balls spawning roughly opposite of each other, and used this ensemble of hold networks with the base network and classifier. 
 
-For the very final submission that scored 55%, we also used an ensemble of base networks (along with the classifier and hold networks).
+For the very final submission that scored 55%, we also used an ensemble of base networks (along with the classifier and the ensemble of hold networks).
 
 ## Appendix
 
@@ -52,7 +52,7 @@ For the very final submission that scored 55%, we also used an ensemble of base 
 
 ![curriculum](images/Phase1_curriculum_tensorboard.png)
 
-1. Hold the balls fixed, initialising them at random phases along the cycle (i.e. RSI, pink)
+1. Hold the balls fixed, initialising them at random phases along the cycle (i.e. RSI, pink).
 2. Rotate the balls with period 20, initialising with RSI (orange)
 3. Rotate the balls with period 10, initialising with RSI (green)
 4. Rotate the balls with period 8, initialising with RSI (blue)
