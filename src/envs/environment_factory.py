@@ -42,7 +42,9 @@ class EnvironmentFactory:
             return gym.make("myoChallengeBaodingP2-v1", **kwargs)
         elif env_name == "CustomMyoBaodingBallsP2":
             return gym.make("CustomMyoChallengeBaodingP2-v1", **kwargs)
-                   
+        elif env_name == "MixtureModelBaodingEnv":
+            return gym.make("MixtureModelBaoding-v1", **kwargs)
+
     @staticmethod
     def register(env_name, **kwargs):
         """Registers the specified environment, so that it can be instantiated

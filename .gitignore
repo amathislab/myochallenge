@@ -136,9 +136,10 @@ dmypy.json
 
 # Project
 /output
-
-# VSCode
-.vscode/
+/trained_models
 
 # Tensorboard
 .monitor.csv
+
+# VS Code
+.vscode/launch.json
