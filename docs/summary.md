@@ -30,7 +30,7 @@ For phase 2, following the same intuition, at slower rotation periods, we gradua
 
 > :warning: Optional and experimental
 >
-> Note that we didn't have enough time to deploy this successfully. In fact, our single model that performs the final task easily scored over 50%. The gains from this approach were marginal and ultimately not necessary for winning the Baoding balls challenge. Regardless, we list it here for completeness.
+> Note that we didn't have enough time to deploy this fully in the final configuration that we desired. In fact, our single model that performs the final task easily scored over 50%. The gains from this approach were marginal and ultimately not necessary for winning the Baoding balls challenge. Regardless, we list it here for completeness.
 
 The final insight we tried to incorporate, albeit not so successfully, is to use a hierarchical model with a base network and specialist networks for subsets of the main task, along with a classifier that we trained to predict the identity of the relevant subset.
 
