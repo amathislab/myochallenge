@@ -14,7 +14,7 @@ The first key component in our model is the recurrent units in both our actor an
 ### Reference State Initiatlization (RSI)
 
 The second key component we used was Reference State Initialization (RSI). The schematic below ([source](https://bair.berkeley.edu/blog/2018/04/10/virtual-stuntman/)) helps us in summarizing the idea:
-![FSI|200]![RSI.png|200]
+![FSI](images/FSI.png) ![RSI](images/RSI.png)
 
 The insight here is that if we initialize the balls at various points in the target trajectory, then the model will experience a much higher density of rewards throughout the final trajectory much more efficiently.
 
@@ -28,7 +28,8 @@ For phase 2, following the same intuition, at slower rotation periods, we gradua
 
 ### Hierarchical mixture of expert ensembles
 
-> [!NOTE] Optional and experimental
+> !NOTE: Optional and experimental
+>
 > Note that we didn't have enough time to deploy this successfully. In fact, our single model that performs the final task easily scored over 50%. The gains from this approach were marginal and ultimately not necessary for winning the Baoding balls challenge. Regardless, we list it here for completeness.
 
 The final insight we tried to incorporate, albeit not so successfully, is to use a hierarchical model with a base network and specialist networks for subsets of the main task, along with a classifier that we trained to predict the identity of the relevant subset.
@@ -51,7 +52,7 @@ For the very final submission that scored 55%, we also used an ensemble of base 
 
 #### Phase 1
 
-![Phase1_curriculum_tensorboard.png]
+![curriculum](Phase1_curriculum_tensorboard.png)
 
 1. Hold the balls fixed, initialising them at random phases along the cycle (i.e. RSI, pink)
 2. Rotate the balls with period 20, initialising with RSI (orange)
