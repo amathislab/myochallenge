@@ -1,6 +1,6 @@
 # MyoChallenge
 
-Code repository for [MyoChallenge](https://sites.google.com/view/myochallenge) by team _stiff fingers_. You can find a summary of our approach [here](docs/summary.md).
+Code repository for [MyoChallenge](https://sites.google.com/view/myochallenge) by team _stiff fingers_. We have documented a summary of our approach including our key insights and intuitions along with all the training steps and hyperparameters [here](docs/summary.md).
 
 ## Requirements
 
