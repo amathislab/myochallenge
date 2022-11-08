@@ -28,7 +28,7 @@ For phase 2, following the same intuition, at slower rotation periods, we gradua
 
 ### 4. Hierarchical mixture of expert ensembles
 
-> !NOTE: Optional and experimental
+> :warning: Optional and experimental
 >
 > Note that we didn't have enough time to deploy this successfully. In fact, our single model that performs the final task easily scored over 50%. The gains from this approach were marginal and ultimately not necessary for winning the Baoding balls challenge. Regardless, we list it here for completeness.
 
