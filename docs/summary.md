@@ -16,7 +16,7 @@ The first key component in our model is the recurrent units in both the actor an
 The second key component we used was Reference State Initialization (RSI). The schematic below ([source](https://bair.berkeley.edu/blog/2018/04/10/virtual-stuntman/)) helps us in summarizing the idea:
 <img src="images/FSI.png" width="500"> <img src="images/RSI.png" width="500">
 
-The insight here is that if we initialize the balls at various points in the target trajectory, then the model will experience a much higher density of rewards throughout the final trajectory much more efficiently.
+The insight here is that if we initialize the balls at various points in the target trajectory during training, then the model will experience a much higher density of rewards throughout the final trajectory much more efficiently.
 
 ### 3. Curriculum learning
 
@@ -30,7 +30,7 @@ For phase 2, following the same intuition, at slower rotation periods, we gradua
 
 > :warning: Optional and experimental
 >
-> Note that we didn't have enough time to deploy this successfully. In fact, our single model that performs the final task easily scored over 50%. The gains from this approach were marginal and ultimately not necessary for winning the Baoding balls challenge. Regardless, we list it here for completeness.
+> Note that we didn't have enough time to deploy this fully in the final configuration that we desired. In fact, our single model that performs the final task easily scored over 50%. The gains from this approach were marginal and ultimately not necessary for winning the Baoding balls challenge. Regardless, we list it here for completeness.
 
 The final insight we tried to incorporate, albeit not so successfully, is to use a hierarchical model with a base network and specialist networks for subsets of the main task, along with a classifier that we trained to predict the identity of the relevant subset.
 
@@ -40,9 +40,9 @@ There were a couple of observations that led us to choose this approach. Crucial
 - target positions far from the balls' initial locations
   - this was particularly disruptive in the hold task because the network learned to make the balls roughly follow the vector given by the "target error". Since the targets do not move for the hold task, the balls run into each other when the targets spawn roughly over $0.6\pi$ away from the balls.
 
-Thus, trained a classifier to take in the first $k$ observations and predict the identity of the task (hold vs other), and also trained a hold network to take over from the base network at timestep $k$ to perform the task. Even with this change, the hold network did not perform well at large separations of the initial ball and target positions. So we trained another set of specialist hold networks that were preferentially exposed to targets and balls spawning roughly opposite of each other, and used this ensemble of hold networks with the base network and classifier. 
+To separately target these special cases, we trained a classifier to predict the identity of the task (hold vs other) from the first $k$ observations, and also trained a hold network to take over from the base network at timestep $k$ to perform the task. Even with this change, the hold network did not perform well at large separations of the initial ball and target positions. So we trained another set of specialist hold networks that were preferentially exposed to targets and balls spawning roughly opposite of each other, and used this ensemble of hold networks with the base network and classifier. 
 
-For the very final submission that scored 55%, we also used an ensemble of base networks (along with the classifier and hold networks).
+For the very final submission that scored 55%, we also used an ensemble of base networks (along with the classifier and the ensemble of hold networks).
 
 ## Appendix
 
@@ -52,7 +52,7 @@ For the very final submission that scored 55%, we also used an ensemble of base 
 
 ![curriculum](images/Phase1_curriculum_tensorboard.png)
 
-1. Hold the balls fixed, initialising them at random phases along the cycle (i.e. RSI, pink)
+1. Hold the balls fixed, initialising them at random phases along the cycle (i.e. RSI, pink).
 2. Rotate the balls with period 20, initialising with RSI (orange)
 3. Rotate the balls with period 10, initialising with RSI (green)
 4. Rotate the balls with period 8, initialising with RSI (blue)
@@ -95,3 +95,18 @@ All the layers have ReLU activation functions and the output, of course, is the 
 | minibatch size                             | 1024 (sequential) transitions                              |
 | state-dependent exploration                | True                                                       |
 | max grad norm                              | 0.8                                                        |
+
+The previous chart shows the final hyperparameters, which we introduce in the curriculum at step 25 because we noticed improve learning. Before step 25 the hyperparameters were:
+
+| Hyperparameter                             | Value                                                      |
+| ------------------------------------------ | ---------------------------------------------------------- |
+| Discount factor $\gamma$                   | 0.99                                                       |
+| Generalized Advantage Estimation $\lambda$ | 0.9                                                       |
+| Entropy regularization coefficient         | 3.62109e-6                                                       |
+| PPO clipping parameter $\lambda$           | 0.3                                                        |
+| Optimizer                                  | Adam                                                       |
+| learning rate                              | 2.6e-5                                                     |
+| Batch size                                 | 128 (sequential) transitions/env $\times$ 16 envs = 2048 |
+| minibatch size                             | 32 (sequential) transitions                              |
+| state-dependent exploration                | True                                                       |
+| max grad norm                              | 0.835671                                                   |
