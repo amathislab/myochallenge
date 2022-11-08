@@ -136,7 +136,6 @@ dmypy.json
 
 # Project
 /output
-/trained_models
 
 # Tensorboard
 .monitor.csv

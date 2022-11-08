@@ -2,7 +2,7 @@ import json
 import os
 from abc import ABC
 from dataclasses import dataclass, field
-
+from typing import List
 from sb3_contrib import RecurrentPPO
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.vec_env import VecNormalize
@@ -34,7 +34,7 @@ class BaodingTrainer:
     load_model_path: str
     log_dir: str
     model_config: dict = None
-    callbacks: list[BaseCallback] = field(default_factory=list)
+    callbacks: List[BaseCallback] = field(default_factory=list)
     timesteps: int = 10_000_000
 
     def __post_init__(self):

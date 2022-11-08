@@ -1,0 +1,1 @@
+{"weighted_reward_keys": {"pos_dist_1": 1, "pos_dist_2": 1, "act_reg": 0, "alive": 1, "solved": 5, "done": 0, "sparse": 0}, "enable_rsi": false, "rsi_probability": 0, "balls_overlap": false, "overlap_probability": 0, "limit_init_angle": 1.8849555921538759, "goal_time_period": [20, 20], "task_choice": "random"}
