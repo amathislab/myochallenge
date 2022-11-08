@@ -24,7 +24,7 @@ Third, we used a curriculum of training that gradually introduced the tougher as
 
 For phase 1, we increased the rotation speed gradually following the intuition that once the dynamics are learnt by the recurrent units, it should be fairly easy to exploit the same dynamical modes by making rotation speed faster. As one would expect, RSI was only needed at slower speeds since the models were already doing full rotations at faster speeds and hence had already explored all of those. The exact curriculum we used is in the Appendix.
 
-For phase 2, following the same intuition, at slower rotation periods, we gradually introduced domain randomization, i.e. noisy task physics including ball size & mass, friction, and how far the targets spawned from the balls. Once the tasks were learned well at slower speeds, we gradually increased the rotation speeds. Arguably, a large portion of training went into adapting to the noisy physics, and one of the key changes that we had to make in order to be successful at faster rotation periods was to use much larger batch sizes for our networks to step meaningfully in the loss landscape. The full list of hyperparameters are in the appendix.
+For phase 2, following the same intuition, at slower rotation periods, we gradually introduced domain randomization, i.e. noisy task physics including ball size & mass, friction, and how far the targets spawned from the balls. Once the tasks were learned well at slower speeds, we gradually increased the rotation speeds. Arguably, a large portion of training went into adapting to the noisy physics, and one of the key changes that we had to make in order to be successful at faster rotation periods with noisy task physics was to use much larger batch sizes for our networks to step meaningfully in the loss landscape. The full list of hyperparameters and links to the models are in the appendix.
 
 ### 4. Hierarchical mixture of expert ensembles
 
@@ -42,7 +42,7 @@ There were a couple of observations that led us to choose this approach. Crucial
 
 To separately target these special cases, we trained a classifier to predict the identity of the task (hold vs other) from the first $k$ observations, and also trained a hold network to take over from the base network at timestep $k$ to perform the task. Even with this change, the hold network did not perform well at large separations of the initial ball and target positions. So we trained another set of specialist hold networks that were preferentially exposed to targets and balls spawning roughly opposite of each other, and used this ensemble of hold networks with the base network and classifier. 
 
-For the very final submission that scored 55%, we also used an ensemble of base networks (along with the classifier and the ensemble of hold networks).
+For the very final submission that scored 55%, we also used an ensemble of base networks along with the classifier and the ensemble of hold networks all of which can be found [here](../trained_models/winning_ensemble).
 
 ## Appendix
 
@@ -62,7 +62,7 @@ For the very final submission that scored 55%, we also used an ensemble of base 
 
 #### Phase 2
 
-All the trained models, environment configurations, main files, and tensorboard logs are all present in the `curriculum_steps` folder. We are omitting the figure from this document because it wouldn't be possible to make sense of the single plot. Roughly, we followed  these steps in order:
+All the trained models, environment configurations, main files, and tensorboard logs are all present in the [trained_models/curriculum_steps_complete_baoding_winner](../trained_models/curriculum_steps_complete_baoding_winner) folder. We are omitting the figure from this document because it wouldn't be possible to make sense of the single plot. Roughly, we followed  these steps in order:
 
 - Steps 01-14 train the model to rotate the balls in both directions starting from RSI static (hold) by slowly decreasing the period to (4.5, 5.5).
   - This was trained pre-emptively before the environment for phase 2 was released since we figured that one week would probably not be enough to train for phase 2.
@@ -70,6 +70,8 @@ All the trained models, environment configurations, main files, and tensorboard 
 - Step 17 starts retraining at a slower period 25 with slightly non-overlapping balls and targets.
 - Steps 18-22 train the model at period 20 by introducing a the fully-noisy task physics and non-overlapping balls & targets (deviating by up to $0.6\pi$).
 - Steps 23-33 decrease the period to 8 and then to (4,6) with the full noise as in phase 2, i.e. final task. Here, we also switched to using a new set of hyperparameters which much bigger batch sizes to average over all the noise across task conditions in the gradient updates.
+
+We have also included all of our models and classifier for the hierarchical mixture of ensembles in the [trained_models/winning_ensemble](../trained_models/winning_ensemble) folder that can be evaluated using `python src/eval_mixture_of_ensembles.py`. This was the model that scored 55% and is currently listed #1 on the leaderboard.
 
 ### Architecture, algorithm, and hyperparameters
 
@@ -79,9 +81,27 @@ We use [RecurrentPPO from Stable Baselines 3](https://github.com/Stable-Baseline
 
 obs --> 256 LSTM --> 256 Linear --> 256 Linear --> output
 
+All the layers have ReLU activation functions and the output, of course, is the value for the critic and the 39-dimensional continuous actions for the actor.
+
 #### Hyperparameters
 
-All the layers have ReLU activation functions and the output, of course, is the value for the critic and the 39-dimensional continuous actions for the actor. Here is the table of the (final) hyperparameters that we used:
+Initially, i.e. before step 25 in the [curriculum for Phase 2](../trained_models/curriculum_steps_complete_baoding_winner) and all of Phase 1, we used the following hyperparameters:
+
+| Hyperparameter                             | Value                                                      |
+| ------------------------------------------ | ---------------------------------------------------------- |
+| Discount factor $\gamma$                   | 0.99                                                       |
+| Generalized Advantage Estimation $\lambda$ | 0.9                                                        |
+| Entropy regularization coefficient         | 3.62109e-6                                                 |
+| PPO clipping parameter $\lambda$           | 0.3                                                        |
+| Optimizer                                  | Adam                                                       |
+| learning rate                              | 2.6e-5                                                     |
+| Batch size                                 | 128 (sequential) transitions/env $\times$ 16 envs = 2048   |
+| minibatch size                             | 32 (sequential) transitions                                |
+| state-dependent exploration                | True                                                       |
+| max grad norm                              | 0.835671                                                   |
+
+
+For phase 2, one of the key changes that we had to make in order to be successful at faster rotation periods with noisy task physics was to use much larger batch sizes. The reason for using larger batch sizes was to allow our our networks to step meaningfully in the loss landscape by considering all possible scenarios. We used these from step 25 in the [curriculum](../trained_models/curriculum_steps_complete_baoding_winner) for phase 2 all the way to the end:
 
 | Hyperparameter                             | Value                                                      |
 | ------------------------------------------ | ---------------------------------------------------------- |
@@ -95,18 +115,3 @@ All the layers have ReLU activation functions and the output, of course, is the 
 | minibatch size                             | 1024 (sequential) transitions                              |
 | state-dependent exploration                | True                                                       |
 | max grad norm                              | 0.8                                                        |
-
-The previous chart shows the final hyperparameters, which we introduce in the curriculum at step 25 because we noticed improve learning. Before step 25 the hyperparameters were:
-
-| Hyperparameter                             | Value                                                      |
-| ------------------------------------------ | ---------------------------------------------------------- |
-| Discount factor $\gamma$                   | 0.99                                                       |
-| Generalized Advantage Estimation $\lambda$ | 0.9                                                       |
-| Entropy regularization coefficient         | 3.62109e-6                                                       |
-| PPO clipping parameter $\lambda$           | 0.3                                                        |
-| Optimizer                                  | Adam                                                       |
-| learning rate                              | 2.6e-5                                                     |
-| Batch size                                 | 128 (sequential) transitions/env $\times$ 16 envs = 2048 |
-| minibatch size                             | 32 (sequential) transitions                              |
-| state-dependent exploration                | True                                                       |
-| max grad norm                              | 0.835671                                                   |
