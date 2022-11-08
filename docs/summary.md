@@ -95,3 +95,18 @@ All the layers have ReLU activation functions and the output, of course, is the 
 | minibatch size                             | 1024 (sequential) transitions                              |
 | state-dependent exploration                | True                                                       |
 | max grad norm                              | 0.8                                                        |
+
+The previous chart shows the final hyperparameters, which we introduce in the curriculum at step 25 because we noticed improve learning. Before step 25 the hyperparameters were:
+
+| Hyperparameter                             | Value                                                      |
+| ------------------------------------------ | ---------------------------------------------------------- |
+| Discount factor $\gamma$                   | 0.99                                                       |
+| Generalized Advantage Estimation $\lambda$ | 0.9                                                       |
+| Entropy regularization coefficient         | 3.62109e-6                                                       |
+| PPO clipping parameter $\lambda$           | 0.3                                                        |
+| Optimizer                                  | Adam                                                       |
+| learning rate                              | 2.6e-5                                                     |
+| Batch size                                 | 128 (sequential) transitions/env $\times$ 16 envs = 2048 |
+| minibatch size                             | 32 (sequential) transitions                              |
+| state-dependent exploration                | True                                                       |
+| max grad norm                              | 0.835671                                                   |
