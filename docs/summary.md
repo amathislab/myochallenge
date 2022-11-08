@@ -68,7 +68,7 @@ All the trained models, environment configurations, main files, and tensorboard 
   - This was trained pre-emptively before the environment for phase 2 was released since we figured that one week would probably not be enough to train for phase 2.
 - Steps 15 & 16 introduce the non-overlapping targets and balls.
 - Step 17 starts retraining at a slower period 25 with slightly non-overlapping balls and targets.
-- Steps 18-22 train the model at period 20 by introducing a the fully-noisy task physics and non-overlapping balls & targets (deviating by up to 0.6$\pi$)
+- Steps 18-22 train the model at period 20 by introducing a the fully-noisy task physics and non-overlapping balls & targets (deviating by up to $0.6\pi$).
 - Steps 23-33 decrease the period to 8 and then to (4,6) with the full noise as in phase 2, i.e. final task. Here, we also switched to using a new set of hyperparameters which much bigger batch sizes to average over all the noise across task conditions in the gradient updates.
 
 ### Architecture, algorithm, and hyperparameters
