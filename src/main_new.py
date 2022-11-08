@@ -1,4 +1,5 @@
 import os
+import shutil
 from datetime import datetime
 
 from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
@@ -64,8 +65,9 @@ def make_parallel_envs(env_config, num_env, start_index=0):
 
 
 if __name__ == "__main__":
-    # ensure tensorboard log directory exists
+    # ensure tensorboard log directory exists and copy this file to track
     os.makedirs(TENSORBOARD_LOG, exist_ok=True)
+    shutil.copy(os.path.abspath(__file__), TENSORBOARD_LOG)
 
     # Create and wrap the training and evaluations environments
     envs = make_parallel_envs(config, 16)
