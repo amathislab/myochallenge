@@ -1,6 +1,6 @@
 # MyoChallenge
 
-Code repository for [MyoChallenge](https://sites.google.com/view/myochallenge) by team _stiff fingers_. You can find a summary of our approach [here](docs/summary.md).
+Code repository for [MyoChallenge](https://sites.google.com/view/myochallenge) by team _stiff fingers_. We have documented a summary of our approach including our key insights and intuitions along with all the training steps and hyperparameters [here](docs/summary.md).
 
 ## Requirements
 
@@ -8,4 +8,4 @@ Listed in `requirements.txt`. Note that there is a version error with some packa
 
 ## Usage
 
-Run `python src/main_baoding.py`. Note that this starts training from one of the pre-trained models in our curriculum. You can find all the trained models along with the scripts used to train them and the environment configurations [here](trained_models/baoding_winning_models/).
+Run `python src/main_baoding.py`. Note that this starts training from one of the pre-trained models in our curriculum. You can find all the trained models along with the scripts used to train them and the environment configurations [here](trained_models/curriculum_steps_complete_baoding_winner/).

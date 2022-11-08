@@ -1,0 +1,1 @@
+{"weighted_reward_keys": {"pos_dist_1": 1, "pos_dist_2": 1, "act_reg": 0, "alive": 1, "solved": 5, "done": 0, "sparse": 0}, "enable_rsi": true, "goal_time_period": [1e+100, 1e+100], "goal_xrange": [0.025, 0.025], "goal_yrange": [0.028, 0.028]}
