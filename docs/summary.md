@@ -44,15 +44,13 @@ Thus, trained a classifier to take in the first $k$ observations and predict the
 
 For the very final submission that scored 55%, we also used an ensemble of base networks (along with the classifier and hold networks).
 
----
-
 ## Appendix
 
 ### Curriculum 
 
 #### Phase 1
 
-![curriculum](Phase1_curriculum_tensorboard.png)
+![curriculum](images/Phase1_curriculum_tensorboard.png)
 
 1. Hold the balls fixed, initialising them at random phases along the cycle (i.e. RSI, pink)
 2. Rotate the balls with period 20, initialising with RSI (orange)
