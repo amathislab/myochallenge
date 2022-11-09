@@ -26,7 +26,7 @@ config = {
         "done": 0,
         "sparse": 0,
     },
-    "goal_time_period": [1e100, 1e100],  # phase 2: (4, 6)
+    "goal_time_period": [4, 6],  # phase 2: (4, 6)
     "goal_xrange": (0.020, 0.030),  # phase 2: (0.020, 0.030)
     "goal_yrange": (0.022, 0.032),  # phase 2: (0.022, 0.032)
     # Randomization in physical properties of the baoding balls
