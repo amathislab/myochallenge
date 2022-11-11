@@ -5,12 +5,9 @@ import os
 import shutil
 from datetime import datetime
 from sb3_contrib import RecurrentPPO
-from stable_baselines3.common.callbacks import EvalCallback
+from stable_baselines3.common.callbacks import EvalCallback, CheckpointCallback
 from stable_baselines3.common.monitor import Monitor
-from stable_baselines3.common.vec_env import VecNormalize
-from stable_baselines3.common.vec_env.subproc_vec_env import SubprocVecEnv
 from src.envs.environment_factory import EnvironmentFactory
-from src.metrics.custom_callbacks import EvaluateLSTM
 from src.feature_extractors.dmap import DmapExtractor
 
 
@@ -25,9 +22,9 @@ PATH_TO_NORMALIZED_ENV = None
 # Path to pretrained network (if not first task)
 PATH_TO_PRETRAINED_NET = None
 # Tensorboard log (will save best model during evaluation)
-now = datetime.now().strftime("%Y-%m-%d/%H-%M-%S") + "_die_orient_dmap_future_online"
+now = datetime.now().strftime("%Y-%m-%d/%H-%M-%S") + "_die_sacmap_online_0.5_rot_0.01_pos_small_noise"
 TENSORBOARD_LOG = os.path.join("output", "training", now)
-
+RecurrentPPO
 
 # Reward structure and task parameters:
 env_config = {
@@ -42,10 +39,10 @@ env_config = {
     },
     # "noise_palm": 0.1,
     # "noise_fingers": 0.1,
-    "goal_pos": (-0.02, 0.02),  # phase 2: (-0.020, 0.020)
-    "goal_rot": (-3.14, 3.14),  # phase 2: (-3.14, 3.14)
-    "obj_size_change": 0.007,  # 0.007
-    "obj_friction_change": (0.2, 0.001, 0.00002),  # (0.2, 0.001, 0.00002)
+    "goal_pos": (-0.01, 0.01),  # phase 2: (-0.020, 0.020)
+    "goal_rot": (-0.5, 0.5),  # phase 2: (-3.14, 3.14)
+    "obj_size_change": 0.001,  # 0.007
+    "obj_friction_change": (0.02, 0.0001, 0.000002),  # (0.2, 0.001, 0.00002)
 }
 
 dmap_config = {
@@ -64,7 +61,7 @@ if __name__ == "__main__":
 
     env = EnvironmentFactory.create(env_name, **env_config)
     env = Monitor(env, TENSORBOARD_LOG)
-    
+
     dmap_config.update(
         {
             "history_observation_space": env.history_observation_space,
@@ -80,6 +77,9 @@ if __name__ == "__main__":
         deterministic=True,
         render=False,
         n_eval_episodes=20,
+    )
+    checkpoint_callback = CheckpointCallback(
+        save_freq=10000, save_path=TENSORBOARD_LOG
     )
 
     # Callbacks for score and for effort
@@ -107,7 +107,7 @@ if __name__ == "__main__":
             SACPolicy,
             env,
             learning_starts=10000,
-            buffer_size=1000000,
+            buffer_size=300000,
             replay_buffer_class=HerReplayBuffer,
             # Parameters for HER
             replay_buffer_kwargs=dict(
@@ -125,16 +125,16 @@ if __name__ == "__main__":
             tensorboard_log=TENSORBOARD_LOG,
         )
     else:
-        model = RecurrentPPO.load(
+        model = SAC.load(
             PATH_TO_PRETRAINED_NET, env=env, tensorboard_log=TENSORBOARD_LOG
         )
 
     # Train and save model
     model.learn(
-        total_timesteps=10_000_000,
-        callback=[eval_callback],
+        total_timesteps=50_000_000,
+        callback=[eval_callback, checkpoint_callback],
         reset_num_timesteps=True,
     )
 
-    model.save(os.path.join(TENSORBOARD_LOG, "final_model.pkl"))
-    # env.save(os.path.join(TENSORBOARD_LOG, "final_env.pkl"))
+    model.save(os.path.join(TENSORBOARD_LOG, "final_model.zip"))
+    env.save(os.path.join(TENSORBOARD_LOG, "final_env.pkl"))
