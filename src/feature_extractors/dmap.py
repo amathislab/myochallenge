@@ -47,7 +47,6 @@ class DmapExtractor(BaseFeaturesExtractor):
 
         # Define the network to extract features from the cnn output of each state element
         flatten_time_and_channels = nn.Flatten()
-        feature_fcnet_hiddens = feature_fcnet_hiddens
 
         prev_layer_size = seq_len * in_channels
         feature_fc_layers = []
@@ -93,8 +92,8 @@ class DmapExtractor(BaseFeaturesExtractor):
         """
         x_t = torch.squeeze(input_dict["x_t"], 0)
         a_t = torch.squeeze(input_dict["a_t"], 0)
-        x_prev = input_dict["x_prev"]
-        a_prev = input_dict["a_prev"]
+        x_prev = input_dict["x_prev"].reshape((x_t.shape[0], -1, x_t.shape[1]))
+        a_prev = input_dict["a_prev"].reshape((a_t.shape[0], -1, a_t.shape[1]))
         
         adapt_input = (
             torch.cat((x_prev, a_prev), 2)
