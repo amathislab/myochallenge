@@ -24,7 +24,7 @@ PATH_TO_NORMALIZED_ENV = None
 # Path to pretrained network (if not first task)
 PATH_TO_PRETRAINED_NET = None
 # Tensorboard log (will save best model during evaluation)
-now = datetime.now().strftime("%Y-%m-%d/%H-%M-%S") + "_die_td3map_online_0.0_rot_0_pos_0_small_noise"
+now = datetime.now().strftime("%Y-%m-%d/%H-%M-%S") + "_die_td3map_alive_3_rot_0_pos_0_no_her"
 TENSORBOARD_LOG = os.path.join("output", "training", now)
 RecurrentPPO
 
@@ -34,7 +34,7 @@ env_config = {
         "pos_dist": 1,
         "rot_dist": 1,
         "act_reg": 0,
-        "alive": 1,
+        "alive": 3,
         "solved": 5,
         "done": 0,
         "sparse": 0,
@@ -42,9 +42,9 @@ env_config = {
     # "noise_palm": 0.1,
     # "noise_fingers": 0.1,
     "goal_pos": (-0.0, 0.0),  # phase 2: (-0.020, 0.020)
-    "goal_rot": (-0., 0.),  # phase 2: (-3.14, 3.14)
-    "obj_size_change": 0.001,  # 0.007
-    "obj_friction_change": (0.02, 0.0001, 0.000002),  # (0.2, 0.001, 0.00002)
+    "goal_rot": (-0, 0),  # phase 2: (-3.14, 3.14)
+    "obj_size_change": 0.,  # 0.007
+    "obj_friction_change": (0.0, 0.000, 0.00000),  # (0.2, 0.001, 0.00002)
 }
 
 dmap_config = {
@@ -113,6 +113,7 @@ if __name__ == "__main__":
             learning_starts=10000,
             buffer_size=300000,
             learning_rate=3e-4,
+            action_noise=action_noise,
             replay_buffer_class=HerReplayBuffer,
             # Parameters for HER
             replay_buffer_kwargs=dict(

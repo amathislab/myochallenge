@@ -2,6 +2,7 @@ import copy
 from stable_baselines3 import HerReplayBuffer, SAC
 from stable_baselines3.sac.policies import SACPolicy
 import os
+import numpy as np
 import shutil
 from datetime import datetime
 from sb3_contrib import RecurrentPPO
@@ -9,6 +10,7 @@ from stable_baselines3.common.callbacks import EvalCallback, CheckpointCallback
 from stable_baselines3.common.monitor import Monitor
 from src.envs.environment_factory import EnvironmentFactory
 from src.feature_extractors.dmap import DmapExtractor
+from stable_baselines3.common.noise import NormalActionNoise
 
 
 env_name = "GoalHistoryMyoReorientP2"
@@ -22,7 +24,7 @@ PATH_TO_NORMALIZED_ENV = None
 # Path to pretrained network (if not first task)
 PATH_TO_PRETRAINED_NET = None
 # Tensorboard log (will save best model during evaluation)
-now = datetime.now().strftime("%Y-%m-%d/%H-%M-%S") + "_die_sacmap_online_0.5_rot_0.01_pos_small_noise"
+now = datetime.now().strftime("%Y-%m-%d/%H-%M-%S") + "_die_sacmap_alive_3_rot_0_pos_0"
 TENSORBOARD_LOG = os.path.join("output", "training", now)
 RecurrentPPO
 
@@ -32,17 +34,17 @@ env_config = {
         "pos_dist": 1,
         "rot_dist": 1,
         "act_reg": 0,
-        "alive": 1,
+        "alive": 3,
         "solved": 5,
         "done": 0,
         "sparse": 0,
     },
     # "noise_palm": 0.1,
     # "noise_fingers": 0.1,
-    "goal_pos": (-0.01, 0.01),  # phase 2: (-0.020, 0.020)
-    "goal_rot": (-0.5, 0.5),  # phase 2: (-3.14, 3.14)
+    "goal_pos": (-0.0, 0.0),  # phase 2: (-0.020, 0.020)
+    "goal_rot": (-0, 0),  # phase 2: (-3.14, 3.14)
     "obj_size_change": 0.001,  # 0.007
-    "obj_friction_change": (0.02, 0.0001, 0.000002),  # (0.2, 0.001, 0.00002)
+    "obj_friction_change": (0.0, 0.000, 0.00000),  # (0.2, 0.001, 0.00002)
 }
 
 dmap_config = {
@@ -102,12 +104,15 @@ if __name__ == "__main__":
 
     # Create model (hyperparameters from RL Zoo HalfCheetak)
     if FIRST_TASK:
+        n_actions = np.prod(env.action_space.shape)
+        action_noise = NormalActionNoise(mean=np.zeros(n_actions), sigma=0.1 * np.ones(n_actions))
         model = SAC(
             # "MultiInputPolicy",
             SACPolicy,
             env,
             learning_starts=10000,
             buffer_size=300000,
+            action_noise=action_noise,
             replay_buffer_class=HerReplayBuffer,
             # Parameters for HER
             replay_buffer_kwargs=dict(
