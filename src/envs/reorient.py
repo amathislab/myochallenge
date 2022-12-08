@@ -10,14 +10,16 @@ from myosuite.utils.quat_math import euler2quat
 
 class CustomReorientEnv(ReorientEnvV0):
     def get_reward_dict(self, obs_dict):
-        pos_dist = np.abs(np.linalg.norm(self.obs_dict["pos_err"], axis=-1))
-        rot_dist = np.abs(np.linalg.norm(self.obs_dict["rot_err"], axis=-1))
+        pos_dist_new = np.abs(np.linalg.norm(self.obs_dict["pos_err"], axis=-1))
+        rot_dist_new = np.abs(np.linalg.norm(self.obs_dict["rot_err"], axis=-1))
+        pos_dist_diff = self.pos_dist - pos_dist_new
+        rot_dist_diff = self.rot_dist - rot_dist_new
         act_mag = (
             np.linalg.norm(self.obs_dict["act"], axis=-1) / self.sim.model.na
             if self.sim.model.na != 0
             else 0
         )
-        drop = pos_dist > self.drop_th
+        drop = pos_dist_new > self.drop_th
 
         rwd_dict = collections.OrderedDict(
             (
@@ -26,16 +28,18 @@ class CustomReorientEnv(ReorientEnvV0):
                 # Update reward keys (DEFAULT_RWD_KEYS_AND_WEIGHTS) accordingly to update final rewards
                 # Examples: Env comes pre-packaged with two keys pos_dist and rot_dist
                 # Optional Keys
-                ("pos_dist", -1.0 * pos_dist),
-                ("rot_dist", -1.0 * rot_dist),
+                ("pos_dist", -1.0 * pos_dist_new),
+                ("rot_dist", -1.0 * rot_dist_new),
+                ("pos_dist_diff", pos_dist_diff),
+                ("rot_dist_diff", rot_dist_diff)
                 ("alive", ~drop),
                 # Must keys
                 ("act_reg", -1.0 * act_mag),
-                ("sparse", -rot_dist - 10.0 * pos_dist),
+                ("sparse", -rot_dist_new - 10.0 * pos_dist_new),
                 (
                     "solved",
-                    (pos_dist < self.pos_th)
-                    and (rot_dist < self.rot_th)
+                    (pos_dist_new < self.pos_th)
+                    and (rot_dist_new < self.rot_th)
                     and (not drop),
                 ),
                 ("done", drop),
@@ -135,10 +139,13 @@ class CustomReorientEnv(ReorientEnvV0):
 
             self.robot.reset(qpos, qvel)
 
-            return self.get_obs()
+            obs = self.get_obs()
 
         else:
-            return MujocoEnv.reset(self)
+            obs = MujocoEnv.reset(self)
+        self.pos_dist = np.abs(np.linalg.norm(self.obs_dict["pos_err"], axis=-1))
+        self.rot_dist = np.abs(np.linalg.norm(self.obs_dict["pos_dist"], axis=-1))
+        return obs
 
     def set_orientation(self):
         x_low, x_high = (
@@ -163,3 +170,10 @@ class CustomReorientEnv(ReorientEnvV0):
         self.sim.model.body_quat[self.goal_bid] = euler2quat(
             np.array([goal_rot_x, goal_rot_y, goal_rot_z])
         )
+
+    def step(self, action):
+        obs, reward, done, info = super().step(action)
+        self.pos_dist = np.abs(np.linalg.norm(self.obs_dict["pos_err"], axis=-1))
+        self.rot_dist = np.abs(np.linalg.norm(self.obs_dict["rot_err"], axis=-1))
+        return obs, reward, done, info
+        
