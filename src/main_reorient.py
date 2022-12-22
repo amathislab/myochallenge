@@ -16,7 +16,7 @@ from train.trainer import MyoTrainer
 ENV_NAME = "CustomMyoReorientP2"
 
 now = datetime.now().strftime("%Y-%m-%d/%H-%M-%S")
-TENSORBOARD_LOG = os.path.join(ROOT_DIR, "output", "training", now) + "reorient_2pi_rot_0_pos_static"
+TENSORBOARD_LOG = os.path.join(ROOT_DIR, "output", "training", now) + "reorient_2pi_rot_0.02_pos_static_len_300"
 
 # Path to normalized Vectorized environment and best model (if not first task)
 PATH_TO_NORMALIZED_ENV = None
@@ -48,6 +48,8 @@ config = {
     "goal_rot_z": None,
 }
 
+max_episode_steps = 300  # default: 150
+
 model_config = dict(
     device="cuda",
     batch_size=32,
@@ -73,6 +75,7 @@ def make_parallel_envs(env_config, num_env, start_index=0):
     def make_env(_):
         def _thunk():
             env = EnvironmentFactory.create(ENV_NAME, **env_config)
+            env._max_episode_steps = max_episode_steps
             env = Monitor(env, TENSORBOARD_LOG)
             return env
 
