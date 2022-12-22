@@ -37,6 +37,8 @@ class EnvironmentFactory:
             return gym.make("CustomMyoChallengeBaodingP1-v1", **kwargs)
         elif env_name == "CustomMyoReorientP1":
             return gym.make("CustomMyoChallengeDieReorientP1-v0", **kwargs)
+        elif env_name == "CustomMyoReorientP2":
+            return gym.make("CustomMyoChallengeDieReorientP2-v0", **kwargs)
         elif env_name == "MyoBaodingBallsP2":
             return gym.make("myoChallengeBaodingP2-v1", **kwargs)
         elif env_name == "CustomMyoBaodingBallsP2":
