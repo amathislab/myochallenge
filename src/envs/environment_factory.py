@@ -45,3 +45,17 @@ class EnvironmentFactory:
             return gym.make("CustomMyoChallengeBaodingP2-v1", **kwargs)
         elif env_name == "MixtureModelBaodingEnv":
             return gym.make("MixtureModelBaoding-v1", **kwargs)
+        elif env_name == "CustomMyoElbowPoseFixed":
+            return gym.make("CustomMyoElbowPoseFixed-v0", **kwargs)
+        elif env_name == "CustomMyoElbowPoseRandom":
+            return gym.make("CustomMyoElbowPoseRandom-v0", **kwargs)
+        elif env_name == "CustomMyoFingerPoseFixed":
+            return gym.make("CustomMyoFingerPoseFixed-v0", **kwargs)
+        elif env_name == "CustomMyoFingerPoseRandom":
+            return gym.make("CustomMyoFingerPoseRandom-v0", **kwargs)
+        elif env_name == "CustomMyoHandPoseFixed":
+            return gym.make("CustomMyoHandPoseFixed-v0", **kwargs)
+        elif env_name == "CustomMyoHandPoseRandom":
+            return gym.make("CustomMyoHandPoseRandom-v0", **kwargs)
+        else:
+            raise ValueError("Environment name not recognized:", env_name)
