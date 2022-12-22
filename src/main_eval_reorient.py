@@ -1,45 +1,51 @@
-import numpy as np
 import os
+
+import numpy as np
 from sb3_contrib import RecurrentPPO
 from stable_baselines3.common.vec_env import VecNormalize
 from stable_baselines3.common.vec_env.subproc_vec_env import SubprocVecEnv
-from envs.environment_factory import EnvironmentFactory
+
 from definitions import ROOT_DIR
+from envs.environment_factory import EnvironmentFactory
+from train.trainer import MyoTrainer
 
 # evaluation parameters:
-render = False
+render = True
 num_episodes = 2_000
 
-env_name = "MyoBaodingBallsP2"
+env_name = "CustomMyoReorientP2"
 
 # Path to normalized Vectorized environment and best model (if not first task)
-PATH_TO_NORMALIZED_ENV = os.path.join(ROOT_DIR, "trained_models/curriculum_steps_complete_baoding_winner/32_phase_2_smaller_rate_resume/env.pkl")
-PATH_TO_PRETRAINED_NET = os.path.join(ROOT_DIR, "trained_models/curriculum_steps_complete_baoding_winner/32_phase_2_smaller_rate_resume/model.zip")
+PATH_TO_NORMALIZED_ENV = os.path.join(ROOT_DIR, "output/training/2022-12-21/18-25-13reorient_2pi_rot_0_pos_static/rl_model_vecnormalize_3600000_steps.pkl")
+PATH_TO_PRETRAINED_NET = os.path.join(ROOT_DIR, "output/training/2022-12-21/18-25-13reorient_2pi_rot_0_pos_static/rl_model_3600000_steps.zip")
 
 # Reward structure and task parameters:
 config = {
     "weighted_reward_keys": {
-        "pos_dist_1": 0,
-        "pos_dist_2": 0,
+        "pos_dist": 0,
+        "rot_dist": 0,
+        "pos_dist_diff": 1,
+        "rot_dist_diff": 1,
+        "alive": 0,
         "act_reg": 0,
         "solved": 5,
         "done": 0,
         "sparse": 0,
     },
-    "goal_time_period": [4, 6],  # phase 2: (4, 6)
-    "goal_xrange": (0.020, 0.030),  # phase 2: (0.020, 0.030)
-    "goal_yrange": (0.022, 0.032),  # phase 2: (0.022, 0.032)
-    # Randomization in physical properties of the baoding balls
-    "obj_size_range": (
-        0.018,
-        0.024,
-    ),  # (0.018, 0.024)   # Object size range. Nominal 0.022
-    "obj_mass_range": (
-        0.030,
-        0.300,
-    ),  # (0.030, 0.300)   # Object weight range. Nominal 43 gms
-    "obj_friction_change": (0.2, 0.001, 0.00002),  # (0.2, 0.001, 0.00002)
-    "task_choice": "random",
+    "goal_pos": (-0.0, 0.0),  # (-.020, .020), +- 2 cm
+    "goal_rot": (-3.14, 3.14),  # (-3.14, 3.14), +-180 degrees
+    # Randomization in physical properties of the die
+    "obj_size_change": 0,  # 0.007 +-7mm delta change in object size
+    "obj_friction_change": (0, 0, 0),  # (0.2, 0.001, 0.00002)
+    "enable_rsi": True,
+    "rsi_distance_pos": 0,
+    "rsi_distance_rot": 0,
+    # "goal_rot_x": [(1.57, 1.57)],
+    # "goal_rot_y": [(1.57, 1.57)],
+    # "goal_rot_z": [(1.57, 1.57)],
+    "goal_rot_x": None,
+    "goal_rot_y": None,
+    "goal_rot_z": None,
 }
 
 
@@ -62,7 +68,10 @@ if __name__ == "__main__":
     envs = make_parallel_envs(env_name, config, num_env=1)
 
     # Normalize environment:
-    envs = VecNormalize.load(PATH_TO_NORMALIZED_ENV, envs)
+    if PATH_TO_NORMALIZED_ENV is not None:
+        envs = VecNormalize.load(PATH_TO_NORMALIZED_ENV, envs)
+    else:
+        envs = VecNormalize(envs)
     envs.training = False
     envs.norm_reward = False
 
@@ -72,9 +81,20 @@ if __name__ == "__main__":
         "lr_schedule": lambda _: 0,
         "clip_range": lambda _: 0,
     }
-    model = RecurrentPPO.load(
-        PATH_TO_PRETRAINED_NET, env=envs, device="cpu", custom_objects=custom_objects
-    )
+    if PATH_TO_PRETRAINED_NET is not None:
+        model = RecurrentPPO.load(
+            PATH_TO_PRETRAINED_NET,
+            env=envs,
+            device="cpu",
+            custom_objects=custom_objects,
+        )
+    else:
+        model = MyoTrainer(
+            envs=envs,
+            env_config={},
+            load_model_path=PATH_TO_PRETRAINED_NET,
+            log_dir=os.path.join(ROOT_DIR, "output", "testing"),
+        ).agent
 
     # EVALUATE
     eval_model = model
@@ -92,6 +112,11 @@ if __name__ == "__main__":
         obs = eval_env.reset()
         episode_starts = np.ones((1,), dtype=bool)
         done = False
+        if render:
+            eval_env.sim.render(mode="window")
+            eval_env.sim.render(mode="window")
+            eval_env.sim.render(mode="window")
+        eval_env.sim.render(mode="window")
         while not done:
             if render:
                 eval_env.sim.render(mode="window")

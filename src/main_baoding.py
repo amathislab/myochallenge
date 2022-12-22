@@ -1,15 +1,16 @@
 import os
 import shutil
 from datetime import datetime
+
 from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import VecNormalize
 from stable_baselines3.common.vec_env.subproc_vec_env import SubprocVecEnv
+
 from definitions import ROOT_DIR
 from envs.environment_factory import EnvironmentFactory
 from metrics.custom_callbacks import EnvDumpCallback
-from train.trainer import BaodingTrainer
-
+from train.trainer import MyoTrainer
 
 # define constants
 ENV_NAME = "CustomMyoBaodingBallsP2"
@@ -96,7 +97,7 @@ if __name__ == "__main__":
     )
 
     # Define trainer
-    trainer = BaodingTrainer(
+    trainer = MyoTrainer(
         envs=envs,
         env_config=config,
         load_model_path=PATH_TO_PRETRAINED_NET,
