@@ -13,39 +13,21 @@ from train.trainer import MyoTrainer
 render = True
 num_episodes = 2_000
 
-env_name = "CustomMyoReorientP2"
+env_name = "CustomMyoFingerPoseFixed"
 
 # Path to normalized Vectorized environment and best model (if not first task)
-PATH_TO_NORMALIZED_ENV = os.path.join(ROOT_DIR, "output/training/2022-12-22/10-49-29reorient_2pi_rot_0_pos_static/rl_model_vecnormalize_1600000_steps.pkl")
-PATH_TO_PRETRAINED_NET = os.path.join(ROOT_DIR, "output/training/2022-12-22/10-49-29reorient_2pi_rot_0_pos_static/rl_model_1600000_steps.zip")
+PATH_TO_NORMALIZED_ENV = None
+PATH_TO_PRETRAINED_NET = None
 
 # Reward structure and task parameters:
 config = {
     "weighted_reward_keys": {
-        "pos_dist": 0,
-        "rot_dist": 0,
-        "pos_dist_diff": 1,
-        "rot_dist_diff": 1,
-        "alive": 0,
-        "act_reg": 0,
         "solved": 5,
         "done": 0,
         "sparse": 0,
     },
-    "goal_pos": (-0.0, 0.0),  # (-.020, .020), +- 2 cm
-    "goal_rot": (-3.14, 3.14),  # (-3.14, 3.14), +-180 degrees
-    # Randomization in physical properties of the die
-    "obj_size_change": 0,  # 0.007 +-7mm delta change in object size
-    "obj_friction_change": (0, 0, 0),  # (0.2, 0.001, 0.00002)
-    "enable_rsi": True,
-    "rsi_distance_pos": 0,
-    "rsi_distance_rot": 0,
-    # "goal_rot_x": [(1.57, 1.57)],
-    # "goal_rot_y": [(1.57, 1.57)],
-    # "goal_rot_z": [(1.57, 1.57)],
-    "goal_rot_x": None,
-    "goal_rot_y": None,
-    "goal_rot_z": None,
+    "reset_type": "sds",
+    "sds_distance": 0.5
 }
 
 
@@ -119,6 +101,8 @@ if __name__ == "__main__":
         eval_env.sim.render(mode="window")
         while not done:
             if render:
+                eval_env.sim.render(mode="window")
+                eval_env.sim.render(mode="window")
                 eval_env.sim.render(mode="window")
             action, lstm_states = eval_model.predict(
                 envs.normalize_obs(obs),
