@@ -25,13 +25,13 @@ PATH_TO_PRETRAINED_NET = None
 # Reward structure and task parameters:
 config = {
     "weighted_reward_keys": {
-        "pos_dist": 0,
-        "rot_dist": 0,
-        "pos_dist_diff": 100,
-        "rot_dist_diff": 100,
-        "alive": 0,
+        "pos_dist": 0.5,
+        "rot_dist": 0.02,
+        "pos_dist_diff": 50,
+        "rot_dist_diff": 5,
+        "alive": 0.1,
         "act_reg": 0,
-        "solved": 5,
+        "solved": 0.5,
         "done": 0,
         "sparse": 0,
     },
