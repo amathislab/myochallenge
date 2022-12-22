@@ -230,7 +230,7 @@ class CustomBaodingEnv(BaodingEnvV1):
         self.task = task
         self.which_task = self.sample_task()
         self.rsi = enable_rsi
-        self.noise_palm = noise_palm np.ones((1,), dtype=bool)
+        self.noise_palm = noise_palm
         self.noise_fingers = noise_fingers
         self.drop_th = drop_th
         self.proximity_th = proximity_th
