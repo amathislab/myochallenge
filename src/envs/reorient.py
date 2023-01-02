@@ -38,9 +38,9 @@ class CustomReorientEnv(ReorientEnvV0):
                 ("sparse", -rot_dist_new - 10.0 * pos_dist_new),
                 (
                     "solved",
-                    (pos_dist_new < self.pos_th)
+                    ((pos_dist_new < self.pos_th)
                     and (rot_dist_new < self.rot_th)
-                    and (not drop),
+                    and (not drop)) * np.ones((1, 1)),
                 ),
                 ("done", drop),
             )

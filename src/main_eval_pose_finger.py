@@ -1,51 +1,33 @@
 import os
+
 import numpy as np
-import time
 from sb3_contrib import RecurrentPPO
 from stable_baselines3.common.vec_env import VecNormalize
 from stable_baselines3.common.vec_env.subproc_vec_env import SubprocVecEnv
+
 from definitions import ROOT_DIR
 from envs.environment_factory import EnvironmentFactory
 from train.trainer import MyoTrainer
-
 
 # evaluation parameters:
 render = True
 num_episodes = 2_000
 
-env_name = "CustomMyoReorientP2"
+env_name = "CustomMyoFingerPoseRandom"
 
 # Path to normalized Vectorized environment and best model (if not first task)
-PATH_TO_NORMALIZED_ENV = os.path.join(ROOT_DIR, "output/training/2022-12-24/15-10-13_reorient_2pi_rot_0_pos_static_len_150_resume/rl_model_vecnormalize_24000000_steps.pkl")
-PATH_TO_PRETRAINED_NET = os.path.join(ROOT_DIR, "output/training/2022-12-24/15-10-13_reorient_2pi_rot_0_pos_static_len_150_resume/rl_model_24000000_steps.zip")
+PATH_TO_NORMALIZED_ENV = os.path.join(ROOT_DIR, "output/training/2022-12-23/12-17-41_finger_pose_random_sds_0.5/rl_model_vecnormalize_800000_steps.pkl")
+PATH_TO_PRETRAINED_NET = os.path.join(ROOT_DIR, "output/training/2022-12-23/12-17-41_finger_pose_random_sds_0.5/rl_model_800000_steps.zip")
 
 # Reward structure and task parameters:
 config = {
     "weighted_reward_keys": {
-        "pos_dist": 0,
-        "rot_dist": 0,
-        "pos_dist_diff": 1,
-        "rot_dist_diff": 1,
-        "alive": 0,
-        "act_reg": 0,
-        "solved": 5,
+        "solved": 1,
         "done": 0,
         "sparse": 0,
     },
-    "goal_pos": (-0.02, 0.02),  # (-.020, .020), +- 2 cm
-    "goal_rot": (-3.14, 3.14),  # (-3.14, 3.14), +-180 degrees
-    # Randomization in physical properties of the die
-    "obj_size_change": 0,  # 0.007 +-7mm delta change in object size
-    "obj_friction_change": (0, 0, 0),  # (0.2, 0.001, 0.00002)
-    "enable_rsi": True,
-    "rsi_distance_pos": 0,
-    "rsi_distance_rot": 0,
-    # "goal_rot_x": [(1.57, 1.57)],
-    # "goal_rot_y": [(1.57, 1.57)],
-    # "goal_rot_z": [(1.57, 1.57)],
-    "goal_rot_x": None,
-    "goal_rot_y": None,
-    "goal_rot_z": None,
+    "reset_type": "init",
+    "sds_distance": None
 }
 
 
@@ -116,10 +98,7 @@ if __name__ == "__main__":
             eval_env.sim.render(mode="window")
             eval_env.sim.render(mode="window")
             eval_env.sim.render(mode="window")
-            eval_env.sim.render(mode="window")
-            eval_env.sim.render(mode="window")
-            eval_env.sim.render(mode="window")
-            time.sleep(0)
+        eval_env.sim.render(mode="window")
         while not done:
             if render:
                 eval_env.sim.render(mode="window")
@@ -132,8 +111,6 @@ if __name__ == "__main__":
                 deterministic=True,
             )
             obs, rewards, done, info = eval_env.step(action)
-            if step == 0:
-                print(info["rwd_dict"])
             episode_starts = done
             cum_rew += rewards
             step += 1

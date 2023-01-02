@@ -13,21 +13,21 @@ from train.trainer import MyoTrainer
 render = True
 num_episodes = 2_000
 
-env_name = "CustomMyoFingerPoseFixed"
+env_name = "CustomMyoElbowPoseRandom"
 
 # Path to normalized Vectorized environment and best model (if not first task)
-PATH_TO_NORMALIZED_ENV = None
-PATH_TO_PRETRAINED_NET = None
+PATH_TO_NORMALIZED_ENV = os.path.join(ROOT_DIR, "output/training/2022-12-23/12-27-54_elbow_pose_random_sds_0.5/rl_model_vecnormalize_800000_steps.pkl")
+PATH_TO_PRETRAINED_NET = os.path.join(ROOT_DIR, "output/training/2022-12-23/12-27-54_elbow_pose_random_sds_0.5/rl_model_800000_steps.zip")
 
 # Reward structure and task parameters:
 config = {
     "weighted_reward_keys": {
-        "solved": 5,
+        "solved": 1,
         "done": 0,
         "sparse": 0,
     },
-    "reset_type": "sds",
-    "sds_distance": 0.5
+    "reset_type": "init",
+    "sds_distance": 0
 }
 
 
