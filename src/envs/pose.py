@@ -17,6 +17,7 @@ class CustomPoseEnv(PoseEnvV0):
         weight_bodyname=None,
         weight_range=None,
         sds_distance=0,
+        target_distance=1,  # for non-SDS curriculum, the target is set at a fraction of the full distance
         **kwargs,
     ):
         self.reset_type = reset_type
@@ -25,6 +26,7 @@ class CustomPoseEnv(PoseEnvV0):
         self.weight_bodyname = weight_bodyname
         self.weight_range = weight_range
         self.sds_distance = sds_distance
+        self.target_distance = target_distance
 
         # resolve joint demands
         if target_jnt_range:
@@ -100,3 +102,13 @@ class CustomPoseEnv(PoseEnvV0):
         obs, reward, done, info = super().step(action)
         info.update(info.get("rwd_dict"))
         return obs, reward, done, info
+    
+    def render(self, mode):
+        return self.sim.render(mode=mode)
+    
+    def get_target_pose(self):
+        full_distance_target_pose = super().get_target_pose()
+        init_pose = self.init_qpos.copy()
+        target_pose = init_pose + self.target_distance * (full_distance_target_pose - init_pose)
+        return target_pose
+        
