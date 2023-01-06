@@ -35,8 +35,8 @@ config = {
         "sparse": 0,
     },
     "goal_orient_range": (-1, 1),  # (-1, 1)
-    "enable_rsi": False,
-    "rsi_distance": None,
+    "enable_rsi": True,
+    "rsi_distance": 0,
 
 }
 

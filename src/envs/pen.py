@@ -20,9 +20,9 @@ class CustomPenEnv(PenTwirlRandomEnvV0):
             else 0
         )
         pos_align_diff = self.pos_align - pos_align  # should decrease
-        rot_align_diff = rot_align- self.rot_align  # should increase
+        rot_align_diff = rot_align - self.rot_align  # should increase
         alive = ~dropped
-        
+
         rwd_dict = collections.OrderedDict(
             (
                 # Optional Keys

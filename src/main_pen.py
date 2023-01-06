@@ -28,8 +28,8 @@ config = {
     "weighted_reward_keys": {
         "pos_align": 0,
         "rot_align": 0,
-        "pos_align_diff": 5e3,
-        "rot_align_diff": 5e2,
+        "pos_align_diff": 1e2,
+        "rot_align_diff": 1e2,
         "alive": 0,
         "act_reg": 0,
         "drop": 0,
