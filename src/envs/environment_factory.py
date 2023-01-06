@@ -57,5 +57,7 @@ class EnvironmentFactory:
             return gym.make("CustomMyoHandPoseFixed-v0", **kwargs)
         elif env_name == "CustomMyoHandPoseRandom":
             return gym.make("CustomMyoHandPoseRandom-v0", **kwargs)
+        elif env_name == "CustomMyoPenTwirlRandom":
+            return gym.make("CustomMyoHandPenTwirlRandom-v0", )
         else:
             raise ValueError("Environment name not recognized:", env_name)

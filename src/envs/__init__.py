@@ -216,3 +216,14 @@ register_env_with_variants(id='CustomMyoHandPoseRandom-v0',  #reconsider
             'target_type': 'generate',      # generate/ fixed
         }
     )
+
+# Pen twirl
+register_env_with_variants(id='CustomMyoHandPenTwirlRandom-v0',
+        entry_point='envs.pen:CustomPenEnv',
+        max_episode_steps=50,
+        kwargs={
+            'model_path': myosuite_path + '/assets/hand/myo_hand_pen.mjb',
+            'normalize_act': True,
+            'frame_skip': 5,
+        }
+    )
