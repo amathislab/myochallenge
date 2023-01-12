@@ -16,25 +16,9 @@ RUN apt-get install -y --no-install-recommends -o APT::Immediate-Configure=false
 
 ENV PYTHONUNBUFFERED 1
 
-ADD docker/requirements.txt /
+ADD requirements.txt /
 
 RUN pip install --upgrade pip
-RUN pip install torch==1.11.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
 RUN pip install -r requirements.txt
 RUN pip install myosuite==1.2.*
-RUN pip install grpcio
-RUN pip install grpcio-tools
 RUN pip install --upgrade pickle5 cloudpickle
-RUN export PYTHONPATH="./utils/:$PYTHONPATH"
-RUN export PYTHONPATH="./agent/:$PYTHONPATH"
-
-
-RUN mkdir /src
-RUN mkdir /data
-ADD ./data /data
-ADD ./src /src
-ADD ./definitions.py /
-
-RUN cd src
-
-CMD [ "python", "main_pose_elbow.py" ]
