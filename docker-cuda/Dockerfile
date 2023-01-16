@@ -25,4 +25,4 @@ RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 RUN pip install myosuite==1.2.*
 RUN pip install --upgrade pickle5 cloudpickle
-RUN python -c "import mujoco_py"
+RUN python3 -c "import mujoco_py"
