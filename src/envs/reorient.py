@@ -38,9 +38,12 @@ class CustomReorientEnv(ReorientEnvV0):
                 ("sparse", -rot_dist_new - 10.0 * pos_dist_new),
                 (
                     "solved",
-                    ((pos_dist_new < self.pos_th)
-                    and (rot_dist_new < self.rot_th)
-                    and (not drop)) * np.ones((1, 1)),
+                    (
+                        (pos_dist_new < self.pos_th)
+                        and (rot_dist_new < self.rot_th)
+                        and (not drop)
+                    )
+                    * np.ones((1, 1)),
                 ),
                 ("done", drop),
             )
@@ -61,10 +64,14 @@ class CustomReorientEnv(ReorientEnvV0):
         weighted_reward_keys: list = ReorientEnvV0.DEFAULT_RWD_KEYS_AND_WEIGHTS,
         goal_pos=(0.0, 0.0),  # goal position range (relative to initial pos)
         goal_rot=(0.785, 0.785),  # goal rotation range (relative to initial rot)
-        obj_size_change = 0,        # object size change (relative to initial size)
-        obj_friction_change = (0,0,0),# object friction change (relative to initial size)
+        obj_size_change=0,  # object size change (relative to initial size)
+        obj_friction_change=(
+            0,
+            0,
+            0,
+        ),  # object friction change (relative to initial size)
         pos_th=0.025,  # position error threshold
-        rot_th=0.262,  # rotation error threshold
+        rot_th=0.262,  # rotation error threshold    MUSCLE_OBS_KEYS = ['muscle_len', 'muscle_vel', 'obj_pos', 'goal_pos', 'pos_err', 'obj_rot', 'goal_rot', 'rot_err']
         drop_th=0.200,  # drop height threshold
         enable_rsi=False,
         rsi_distance_pos=0,
@@ -97,20 +104,28 @@ class CustomReorientEnv(ReorientEnvV0):
         self.goal_rot_z = goal_rot_z
         self.pos_dist = 0
         self.rot_dist = 0
-        
+
         # setup for object randomization
-        self.target_gid = self.sim.model.geom_name2id('target_dice')
+        self.target_gid = self.sim.model.geom_name2id("target_dice")
         self.target_default_size = self.sim.model.geom_size[self.target_gid].copy()
 
-        object_bid = self.sim.model.body_name2id('Object')
+        object_bid = self.sim.model.body_name2id("Object")
         self.object_gid0 = self.sim.model.body_geomadr[object_bid]
         self.object_gidn = self.object_gid0 + self.sim.model.body_geomnum[object_bid]
-        self.object_default_size = self.sim.model.geom_size[self.object_gid0:self.object_gidn].copy()
-        self.object_default_pos = self.sim.model.geom_pos[self.object_gid0:self.object_gidn].copy()
+        self.object_default_size = self.sim.model.geom_size[
+            self.object_gid0 : self.object_gidn
+        ].copy()
+        self.object_default_pos = self.sim.model.geom_pos[
+            self.object_gid0 : self.object_gidn
+        ].copy()
 
-        self.obj_size_change = {'high':obj_size_change, 'low':-obj_size_change}
-        self.obj_friction_range = {'high':self.sim.model.geom_friction[self.object_gid0:self.object_gidn] + obj_friction_change,
-                                    'low':self.sim.model.geom_friction[self.object_gid0:self.object_gidn] - obj_friction_change}
+        self.obj_size_change = {"high": obj_size_change, "low": -obj_size_change}
+        self.obj_friction_range = {
+            "high": self.sim.model.geom_friction[self.object_gid0 : self.object_gidn]
+            + obj_friction_change,
+            "low": self.sim.model.geom_friction[self.object_gid0 : self.object_gidn]
+            - obj_friction_change,
+        }
 
         BaseV0._setup(
             self,
@@ -134,19 +149,28 @@ class CustomReorientEnv(ReorientEnvV0):
         default_init_rot = np.array([1.0, 0.0, 0.0, 0.0])
 
         # Die friction changes
-        self.sim.model.geom_friction[self.object_gid0:self.object_gidn] = self.np_random.uniform(**self.obj_friction_range)
+        self.sim.model.geom_friction[
+            self.object_gid0 : self.object_gidn
+        ] = self.np_random.uniform(**self.obj_friction_range)
 
         # Die and Target size changes
         del_size = self.np_random.uniform(**self.obj_size_change)
         # adjust size of target
         self.sim.model.geom_size[self.target_gid] = self.target_default_size + del_size
         # adjust size of die
-        self.sim.model.geom_size[self.object_gid0:self.object_gidn-3][:,1] = self.object_default_size[:-3][:,1] + del_size
-        self.sim.model.geom_size[self.object_gidn-3:self.object_gidn] = self.object_default_size[-3:] + del_size
+        self.sim.model.geom_size[self.object_gid0 : self.object_gidn - 3][:, 1] = (
+            self.object_default_size[:-3][:, 1] + del_size
+        )
+        self.sim.model.geom_size[self.object_gidn - 3 : self.object_gidn] = (
+            self.object_default_size[-3:] + del_size
+        )
         # adjust boundary of die
-        object_gpos = self.sim.model.geom_pos[self.object_gid0:self.object_gidn]
-        self.sim.model.geom_pos[self.object_gid0:self.object_gidn] = object_gpos/abs(object_gpos+1e-16) * (abs(self.object_default_pos) + del_size)
-
+        object_gpos = self.sim.model.geom_pos[self.object_gid0 : self.object_gidn]
+        self.sim.model.geom_pos[self.object_gid0 : self.object_gidn] = (
+            object_gpos
+            / abs(object_gpos + 1e-16)
+            * (abs(self.object_default_pos) + del_size)
+        )
 
         if self.rsi:
 
@@ -210,4 +234,75 @@ class CustomReorientEnv(ReorientEnvV0):
         self.rot_dist = np.abs(np.linalg.norm(self.obs_dict["rot_err"], axis=-1))
         info.update(info.get("rwd_dict"))
         return obs, reward, done, info
-        
+
+
+class MyoReorientEnv(CustomReorientEnv):
+    MUSCLE_OBS_KEYS = [
+        "muscle_len",
+        "muscle_vel",
+        "obj_pos",
+        "goal_pos",
+        "pos_err",
+        "obj_rot",
+        "goal_rot",
+        "rot_err",
+    ]
+
+    def _setup(
+        self,
+        obs_keys: list = MUSCLE_OBS_KEYS,
+        weighted_reward_keys: list = ReorientEnvV0.DEFAULT_RWD_KEYS_AND_WEIGHTS,
+        obs_mode="array",  # "array" or "dict"
+        goal_pos=(0.0, 0.0),  # goal position range (relative to initial pos)
+        goal_rot=(0.785, 0.785),  # goal rotation range (relative to initial rot)
+        obj_size_change=0,  # object size change (relative to initial size)
+        obj_friction_change=(
+            0,
+            0,
+            0,
+        ),  # object friction change (relative to initial size)
+        pos_th=0.025,  # position error threshold
+        rot_th=0.262,  # rotation error threshold
+        drop_th=0.200,  # drop height threshold
+        enable_rsi=False,
+        rsi_distance_pos=0,
+        rsi_distance_rot=0,
+        goal_rot_x=None,
+        goal_rot_y=None,
+        goal_rot_z=None,
+        **kwargs,
+    ):
+        self.obs_mode = obs_mode
+        super()._setup(
+            obs_keys=obs_keys,
+            weighted_reward_keys=weighted_reward_keys,
+            goal_pos=goal_pos,
+            goal_rot=goal_rot,
+            obj_size_change=obj_size_change,
+            obj_friction_change=obj_friction_change,
+            pos_th=pos_th,
+            rot_th=rot_th,
+            drop_th=drop_th,
+            enable_rsi=enable_rsi,
+            rsi_distance_pos=rsi_distance_pos,
+            rsi_distance_rot=rsi_distance_rot,
+            goal_rot_x=goal_rot_x,
+            goal_rot_y=goal_rot_y,
+            goal_rot_z=goal_rot_z,
+            **kwargs,
+        )
+
+    def get_obs_dict(self, sim):
+        obs_dict = super().get_obs_dict(self.sim_obsd)
+        obs_dict["muscle_len"] = sim.data.actuator_length.copy()
+        obs_dict["muscle_vel"] = sim.data.actuator_velocity.copy()
+        return obs_dict
+
+    def get_obs(self):
+        obs = super().get_obs()
+        if self.obs_mode == "array":
+            return obs
+        elif self.obs_mode == "dict":
+            return self.obs_dict
+        else:
+            raise ValueError("Unknown observation mode: ", self.obs_mode)

@@ -102,13 +102,71 @@ class CustomPoseEnv(PoseEnvV0):
         obs, reward, done, info = super().step(action)
         info.update(info.get("rwd_dict"))
         return obs, reward, done, info
-    
+
     def render(self, mode):
         return self.sim.render(mode=mode)
-    
+
     def get_target_pose(self):
         full_distance_target_pose = super().get_target_pose()
         init_pose = self.init_qpos.copy()
-        target_pose = init_pose + self.target_distance * (full_distance_target_pose - init_pose)
+        target_pose = init_pose + self.target_distance * (
+            full_distance_target_pose - init_pose
+        )
         return target_pose
+
+
+class MusclePoseEnv(CustomPoseEnv):
+    MUSCLE_OBS_KEYS = [
+        "muscle_len",
+        "muscle_vel",
+        "pose_err",
+    ]
+
+    def _setup(
+        self,
+        viz_site_targets: tuple = None,  # site to use for targets visualization []
+        target_jnt_range: dict = None,  # joint ranges as tuples {name:(min, max)}_nq
+        target_jnt_value: list = None,  # desired joint vector [des_qpos]_nq
+        obs_mode="array",  # "array" or "dict"
+        reset_type="init",  # none; init; random; sds
+        target_type="generate",  # generate; switch; fixed
+        obs_keys: list = MUSCLE_OBS_KEYS,
+        weighted_reward_keys: dict = PoseEnvV0.DEFAULT_RWD_KEYS_AND_WEIGHTS,
+        pose_thd=0.35,
+        weight_bodyname=None,
+        weight_range=None,
+        sds_distance=0,
+        target_distance=1,  # for non-SDS curriculum, the target is set at a fraction of the full distance
+        **kwargs,
+    ):
+        self.obs_mode = obs_mode
+        super()._setup(
+            viz_site_targets=viz_site_targets,
+            target_jnt_range=target_jnt_range,
+            target_jnt_value=target_jnt_value,
+            reset_type=reset_type,
+            target_type=target_type,
+            obs_keys=obs_keys,
+            weighted_reward_keys=weighted_reward_keys,
+            pose_thd=pose_thd,
+            weight_bodyname=weight_bodyname,
+            weight_range=weight_range,
+            sds_distance=sds_distance,
+            target_distance=target_distance,
+            **kwargs,
+        )
         
+    def get_obs_dict(self, sim):
+        obs_dict = super().get_obs_dict(self.sim_obsd)
+        obs_dict["muscle_len"] = sim.data.actuator_length.copy()
+        obs_dict["muscle_vel"] = sim.data.actuator_velocity.copy()
+        return obs_dict
+
+    def get_obs(self):
+        obs = super().get_obs()
+        if self.obs_mode == "array":
+            return obs
+        elif self.obs_mode == "dict":
+            return self.obs_dict
+        else:
+            raise ValueError("Unknown observation mode: ", self.obs_mode)

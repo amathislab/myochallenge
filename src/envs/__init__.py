@@ -54,6 +54,24 @@ gym.envs.registration.register(
     },
 )
 
+# MyoChallenge Die: muscle state env
+gym.envs.registration.register(
+    id="MyoReorientEnv-v0",
+    entry_point="envs.reorient:MyoReorientEnv",
+    max_episode_steps=150,
+    kwargs={
+        "model_path": myosuite_path + "/assets/hand/myo_hand_die.mjb",
+        "normalize_act": True,
+        "frame_skip": 5,
+        # Randomization in goals
+        'goal_pos': (-.020, .020),  # +- 2 cm
+        'goal_rot': (-3.14, 3.14),   # +-180 degrees
+        # Randomization in physical properties of the die
+        'obj_size_change': 0.007, # +-7mm delta change in object size
+        'obj_friction_change': (0.2, 0.001, 0.00002) # nominal: 1.0, 0.005, 0.0001
+    },
+)
+
 # MyoChallenge Baoding: Phase2 env
 gym.envs.registration.register(
     id="CustomMyoChallengeBaodingP2-v1",
@@ -118,6 +136,18 @@ register_env_with_variants(id='CustomMyoElbowPoseRandom-v0',
         }
     )
 
+register_env_with_variants(id='MuscleElbowPoseRandom-v0',
+        entry_point='envs.pose:MusclePoseEnv',
+        max_episode_steps=100,
+        kwargs={
+            'model_path': myosuite_path+'/assets/arm/myo_elbow_1dof6muscles.mjb',
+            'target_jnt_range': {'r_elbow_flex':(0, 2.27),},
+            'viz_site_targets': ('wrist',),
+            'normalize_act': True,
+            'pose_thd': .175,
+            'reset_type': 'random'
+        }
+    )
 
 # Finger-Joint posing ==============================
 register_env_with_variants(id='CustomMyoFingerPoseFixed-v0',
@@ -149,6 +179,20 @@ register_env_with_variants(id='CustomMyoFingerPoseRandom-v0',
         }
     )
 
+register_env_with_variants(id='MuscleFingerPoseRandom-v0',
+        entry_point='envs.pose:MusclePoseEnv',
+        max_episode_steps=100,
+        kwargs={
+            'model_path': myosuite_path + '/assets/finger/myo_finger_v0.mjb',
+            'target_jnt_range': {'IFadb':(-.2, .2),
+                                'IFmcp':(-.4, 1),
+                                'IFpip':(.1, 1),
+                                'IFdip':(.1, 1)
+                                },
+            'viz_site_targets': ('IFtip',),
+            'normalize_act': True,
+        }
+    )
 # Hand-Joint posing ==============================
 
 # Remove this when the ASL envs stablizes
@@ -205,6 +249,20 @@ for i_n, n  in enumerate(jnt_namesHand):
 
 register_env_with_variants(id='CustomMyoHandPoseRandom-v0',  #reconsider
         entry_point='envs.pose:CustomPoseEnv',
+        max_episode_steps=100,
+        kwargs={
+            'model_path': myosuite_path + '/assets/hand/myo_hand_pose.mjb',
+            'viz_site_targets': ('THtip','IFtip','MFtip','RFtip','LFtip'),
+            'target_jnt_range': Rpos,
+            'normalize_act': True,
+            'pose_thd': .8,
+            'reset_type': "random",         # none, init, random
+            'target_type': 'generate',      # generate/ fixed
+        }
+    )
+
+register_env_with_variants(id='MuscleHandPoseRandom-v0',  #reconsider
+        entry_point='envs.pose:MusclePoseEnv',
         max_episode_steps=100,
         kwargs={
             'model_path': myosuite_path + '/assets/hand/myo_hand_pose.mjb',
