@@ -1,22 +1,25 @@
 import os
 import shutil
-import torch.nn as nn
 from datetime import datetime
+
+import torch.nn as nn
 from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import VecNormalize
 from stable_baselines3.common.vec_env.subproc_vec_env import SubprocVecEnv
+
 from definitions import ROOT_DIR
 from envs.environment_factory import EnvironmentFactory
 from metrics.custom_callbacks import EnvDumpCallback, TensorboardCallback
 from train.trainer import MyoTrainer
 
-
 # define constants
 ENV_NAME = "CustomMyoFingerPoseRandom"
 
 now = datetime.now().strftime("%Y-%m-%d/%H-%M-%S")
-TENSORBOARD_LOG = os.path.join(ROOT_DIR, "output", "training", now) + "_finger_pose_random_static"
+TENSORBOARD_LOG = (
+    os.path.join(ROOT_DIR, "output", "training", now) + "_finger_pose_full_from_scratch"
+)
 
 # Path to normalized Vectorized environment and best model (if not first task)
 PATH_TO_NORMALIZED_ENV = None
@@ -33,9 +36,8 @@ config = {
         "done": 0,
         "sparse": 0,
     },
-    # Randomization in physical properties of the die
-    "reset_type": "sds",
-    "sds_distance": 0,
+    "reset_type": "init",
+    "sds_distance": None,
     "weight_bodyname": None,
     "weight_range": None,
 }
@@ -83,7 +85,7 @@ if __name__ == "__main__":
 
     # Create and wrap the training and evaluations environments
     envs = make_parallel_envs(config, 16)
-    
+
     if PATH_TO_NORMALIZED_ENV is not None:
         envs = VecNormalize.load(PATH_TO_NORMALIZED_ENV, envs)
     else:
@@ -108,9 +110,17 @@ if __name__ == "__main__":
         save_vecnormalize=True,
         verbose=1,
     )
-    
+
     tensorboard_callback = TensorboardCallback(
-        info_keywords=("pose", "bonus", "penalty", "act_reg", "done", "solved", "sparse")
+        info_keywords=(
+            "pose",
+            "bonus",
+            "penalty",
+            "act_reg",
+            "done",
+            "solved",
+            "sparse",
+        )
     )
 
     # Define trainer

@@ -10,14 +10,20 @@ from envs.environment_factory import EnvironmentFactory
 from train.trainer import MyoTrainer
 
 # evaluation parameters:
-render = True
+render = False
 num_episodes = 2_000
 
 env_name = "CustomMyoHandPoseRandom"
 
 # Path to normalized Vectorized environment and best model (if not first task)
-PATH_TO_NORMALIZED_ENV = os.path.join(ROOT_DIR, "output/training/2022-12-23/12-23-41_hand_pose_random_sds_0.5/rl_model_vecnormalize_10000000_steps.pkl")
-PATH_TO_PRETRAINED_NET = os.path.join(ROOT_DIR, "output/training/2022-12-23/12-23-41_hand_pose_random_sds_0.5/rl_model_10000000_steps.zip")
+PATH_TO_NORMALIZED_ENV = os.path.join(
+    ROOT_DIR,
+    "output/training/2022-12-22/18-35-46_hand_pose_random_static/rl_model_vecnormalize_3600000_steps.pkl",
+)
+PATH_TO_PRETRAINED_NET = os.path.join(
+    ROOT_DIR,
+    "output/training/2022-12-22/18-35-46_hand_pose_random_static/rl_model_3600000_steps.zip",
+)
 
 # Reward structure and task parameters:
 config = {
@@ -27,7 +33,7 @@ config = {
         "sparse": 0,
     },
     "reset_type": "sds",
-    "sds_distance": 0.5
+    "sds_distance": 0
 }
 
 
@@ -98,7 +104,7 @@ if __name__ == "__main__":
             eval_env.sim.render(mode="window")
             eval_env.sim.render(mode="window")
             eval_env.sim.render(mode="window")
-        eval_env.sim.render(mode="window")
+            eval_env.sim.render(mode="window")
         while not done:
             if render:
                 eval_env.sim.render(mode="window")

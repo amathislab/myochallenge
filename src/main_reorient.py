@@ -16,7 +16,7 @@ from train.trainer import MyoTrainer
 ENV_NAME = "CustomMyoReorientP2"
 
 now = datetime.now().strftime("%Y-%m-%d/%H-%M-%S")
-TENSORBOARD_LOG = os.path.join(ROOT_DIR, "output", "training", now) + "reorient_2pi_rot_0.02_pos_static_len_300"
+TENSORBOARD_LOG = os.path.join(ROOT_DIR, "output", "training", now) + "_reorient_2pi_static_128_steps"
 
 # Path to normalized Vectorized environment and best model (if not first task)
 PATH_TO_NORMALIZED_ENV = None
@@ -25,17 +25,17 @@ PATH_TO_PRETRAINED_NET = None
 # Reward structure and task parameters:
 config = {
     "weighted_reward_keys": {
-        "pos_dist": 0.5,
-        "rot_dist": 0.02,
-        "pos_dist_diff": 50,
-        "rot_dist_diff": 5,
-        "alive": 0.1,
+        "pos_dist": 0,
+        "rot_dist": 0,
+        "pos_dist_diff": 5e3,
+        "rot_dist_diff": 5e2,
+        "alive": 0,
         "act_reg": 0,
-        "solved": 0.5,
+        "solved": 1,
         "done": 0,
         "sparse": 0,
     },
-    "goal_pos": (-0.02, 0.02),  # (-.020, .020), +- 2 cm
+    "goal_pos": (-0.0, 0.0),  # (-.020, .020), +- 2 cm
     "goal_rot": (-3.14, 3.14),  # (-3.14, 3.14), +-180 degrees
     # Randomization in physical properties of the die
     "obj_size_change": 0,  # 0.007 +-7mm delta change in object size
@@ -48,19 +48,17 @@ config = {
     "goal_rot_z": None,
 }
 
-max_episode_steps = 300  # default: 150
-
 model_config = dict(
     device="cuda",
-    batch_size=32,
+    batch_size=4096,
     n_steps=128,
-    learning_rate=2.55673e-05,
-    ent_coef=3.62109e-06,
+    learning_rate=5e-05,
+    ent_coef=0.00025,
     clip_range=0.3,
     gamma=0.99,
     gae_lambda=0.9,
     max_grad_norm=0.7,
-    vf_coef=0.835671,
+    vf_coef=0.5,
     n_epochs=10,
     policy_kwargs=dict(
         ortho_init=False,
@@ -75,7 +73,6 @@ def make_parallel_envs(env_config, num_env, start_index=0):
     def make_env(_):
         def _thunk():
             env = EnvironmentFactory.create(ENV_NAME, **env_config)
-            env._max_episode_steps = max_episode_steps
             env = Monitor(env, TENSORBOARD_LOG)
             return env
 
@@ -119,7 +116,7 @@ if __name__ == "__main__":
     
     tensorboard_callback = TensorboardCallback(
         info_keywords=("pos_dist", "rot_dist", "pos_dist_diff", "rot_dist_diff", "act_reg", "alive", "solved")
-    )
+   )
 
     # Define trainer
     trainer = MyoTrainer(
@@ -129,7 +126,7 @@ if __name__ == "__main__":
         log_dir=TENSORBOARD_LOG,
         model_config=model_config,
         callbacks=[eval_callback, checkpoint_callback, tensorboard_callback],
-        timesteps=10_000_000,
+        timesteps=50_000_000,
     )
 
     # Train agent

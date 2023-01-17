@@ -17,11 +17,11 @@ from train.trainer import MyoTrainer
 ENV_NAME = "CustomMyoPenTwirlRandom"
 
 now = datetime.now().strftime("%Y-%m-%d/%H-%M-%S")
-TENSORBOARD_LOG = os.path.join(ROOT_DIR, "output", "training", now) + "_pen_twirl_random_static_full_range"
+TENSORBOARD_LOG = os.path.join(ROOT_DIR, "output", "training", now) + "_pen_twirl_random_distance_full_from_0.5_sds_4096_resume"
 
 # Path to normalized Vectorized environment and best model (if not first task)
-PATH_TO_NORMALIZED_ENV = None
-PATH_TO_PRETRAINED_NET = None
+PATH_TO_NORMALIZED_ENV = os.path.join(ROOT_DIR, "output/training/2023-01-13/10-09-33_pen_twirl_random_distance_full_from_0.5_sds_4096_resume/final_env.pkl")
+PATH_TO_PRETRAINED_NET = os.path.join(ROOT_DIR, "output/training/2023-01-13/10-09-33_pen_twirl_random_distance_full_from_0.5_sds_4096_resume/final_model.pkl")
 
 # Reward structure and task parameters:
 config = {
@@ -39,15 +39,15 @@ config = {
         "sparse": 0,
     },
     "goal_orient_range": (-1, 1),  # (-1, 1)
-    "enable_rsi": True,
-    "rsi_distance": 0,
+    "enable_rsi": False,
+    "rsi_distance": None,
 
 }
 
 model_config = dict(
     device="cuda",
     batch_size=4096,
-    n_steps=128,
+    n_steps=4096,
     learning_rate=5e-05,
     ent_coef=0.00025,
     clip_range=0.3,
@@ -122,7 +122,7 @@ if __name__ == "__main__":
         log_dir=TENSORBOARD_LOG,
         model_config=model_config,
         callbacks=[eval_callback, checkpoint_callback, tensorboard_callback],
-        timesteps=50_000_000,
+        timesteps=500_000_000,
     )
 
     # Train agent

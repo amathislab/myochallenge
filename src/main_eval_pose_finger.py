@@ -1,23 +1,21 @@
 import os
-
 import numpy as np
 from sb3_contrib import RecurrentPPO
 from stable_baselines3.common.vec_env import VecNormalize
 from stable_baselines3.common.vec_env.subproc_vec_env import SubprocVecEnv
-
 from definitions import ROOT_DIR
 from envs.environment_factory import EnvironmentFactory
 from train.trainer import MyoTrainer
 
 # evaluation parameters:
-render = True
+render = False
 num_episodes = 2_000
 
 env_name = "CustomMyoFingerPoseRandom"
 
 # Path to normalized Vectorized environment and best model (if not first task)
-PATH_TO_NORMALIZED_ENV = os.path.join(ROOT_DIR, "output/training/2022-12-23/12-17-41_finger_pose_random_sds_0.5/rl_model_vecnormalize_800000_steps.pkl")
-PATH_TO_PRETRAINED_NET = os.path.join(ROOT_DIR, "output/training/2022-12-23/12-17-41_finger_pose_random_sds_0.5/rl_model_800000_steps.zip")
+PATH_TO_NORMALIZED_ENV = os.path.join(ROOT_DIR, "output/training/2022-12-23/16-43-12_finger_pose_random_sds_full/final_env.pkl")
+PATH_TO_PRETRAINED_NET = os.path.join(ROOT_DIR, "output/training/2022-12-23/16-43-12_finger_pose_random_sds_full/final_model.pkl")
 
 # Reward structure and task parameters:
 config = {
@@ -27,7 +25,8 @@ config = {
         "sparse": 0,
     },
     "reset_type": "init",
-    "sds_distance": None
+    "sds_distance": None,
+    "target_distance": 0
 }
 
 
@@ -98,7 +97,7 @@ if __name__ == "__main__":
             eval_env.sim.render(mode="window")
             eval_env.sim.render(mode="window")
             eval_env.sim.render(mode="window")
-        eval_env.sim.render(mode="window")
+            eval_env.sim.render(mode="window")
         while not done:
             if render:
                 eval_env.sim.render(mode="window")

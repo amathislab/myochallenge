@@ -1,26 +1,29 @@
 import os
 import shutil
-import torch.nn as nn
 from datetime import datetime
+
+import torch.nn as nn
 from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import VecNormalize
 from stable_baselines3.common.vec_env.subproc_vec_env import SubprocVecEnv
+
 from definitions import ROOT_DIR
 from envs.environment_factory import EnvironmentFactory
 from metrics.custom_callbacks import EnvDumpCallback, TensorboardCallback
 from train.trainer import MyoTrainer
 
-
 # define constants
 ENV_NAME = "CustomMyoHandPoseRandom"
 
 now = datetime.now().strftime("%Y-%m-%d/%H-%M-%S")
-TENSORBOARD_LOG = os.path.join(ROOT_DIR, "output", "training", now) + "_hand_pose_random_static"
+TENSORBOARD_LOG = (
+    os.path.join(ROOT_DIR, "output", "training", now) + "_hand_pose_random_full_from_sds_0.6_4096"
+)
 
 # Path to normalized Vectorized environment and best model (if not first task)
-PATH_TO_NORMALIZED_ENV = None
-PATH_TO_PRETRAINED_NET = None
+PATH_TO_NORMALIZED_ENV = os.path.join(ROOT_DIR, "output/training/2023-01-13/10-13-26_hand_pose_random_full_from_sds_0.6_4096/final_env.pkl")
+PATH_TO_PRETRAINED_NET = os.path.join(ROOT_DIR, "output/training/2023-01-13/10-13-26_hand_pose_random_full_from_sds_0.6_4096/final_model.pkl")
 
 # Reward structure and task parameters:
 config = {
@@ -33,26 +36,45 @@ config = {
         "done": 0,
         "sparse": 0,
     },
-    # Randomization in physical properties of the die
-    "reset_type": "sds",
-    "sds_distance": 0,
+    "reset_type": "init",
+    "sds_distance": None,
     "weight_bodyname": None,
     "weight_range": None,
 }
 
 max_episode_steps = 100  # default: 100
 
+# model_config = dict(
+#     device="cuda",
+#     batch_size=1024,
+#     n_steps=128,
+#     learning_rate=5e-05,
+#     ent_coef=5e-06,
+#     clip_range=0.3,
+#     gamma=0.99,
+#     gae_lambda=0.9,
+#     max_grad_norm=0.7,
+#     vf_coef=0.5,
+#     n_epochs=10,
+#     policy_kwargs=dict(
+#         ortho_init=False,
+#         log_std_init=-2,
+#         activation_fn=nn.ReLU,
+#         net_arch=[dict(pi=[256, 256], vf=[256, 256])],
+#     ),
+# )
+
 model_config = dict(
     device="cuda",
-    batch_size=32,
-    n_steps=128,
-    learning_rate=2.55673e-05,
-    ent_coef=3.62109e-06,
+    batch_size=4096,
+    n_steps=4096,
+    learning_rate=5e-05,
+    ent_coef=0.00025,
     clip_range=0.3,
     gamma=0.99,
     gae_lambda=0.9,
     max_grad_norm=0.7,
-    vf_coef=0.835671,
+    vf_coef=0.5,
     n_epochs=10,
     policy_kwargs=dict(
         ortho_init=False,
@@ -83,7 +105,7 @@ if __name__ == "__main__":
 
     # Create and wrap the training and evaluations environments
     envs = make_parallel_envs(config, 16)
-    
+
     if PATH_TO_NORMALIZED_ENV is not None:
         envs = VecNormalize.load(PATH_TO_NORMALIZED_ENV, envs)
     else:
@@ -108,9 +130,17 @@ if __name__ == "__main__":
         save_vecnormalize=True,
         verbose=1,
     )
-    
+
     tensorboard_callback = TensorboardCallback(
-        info_keywords=("pose", "bonus", "penalty", "act_reg", "done", "solved", "sparse")
+        info_keywords=(
+            "pose",
+            "bonus",
+            "penalty",
+            "act_reg",
+            "done",
+            "solved",
+            "sparse",
+        )
     )
 
     # Define trainer
@@ -121,7 +151,7 @@ if __name__ == "__main__":
         log_dir=TENSORBOARD_LOG,
         model_config=model_config,
         callbacks=[eval_callback, checkpoint_callback, tensorboard_callback],
-        timesteps=10_000_000,
+        timesteps=500_000_000,
     )
 
     # Train agent
