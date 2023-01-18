@@ -157,7 +157,7 @@ class MusclePoseEnv(CustomPoseEnv):
         )
         
     def get_obs_dict(self, sim):
-        obs_dict = super().get_obs_dict(self.sim_obsd)
+        obs_dict = super().get_obs_dict(sim)
         obs_dict["muscle_len"] = sim.data.actuator_length.copy()
         obs_dict["muscle_vel"] = sim.data.actuator_velocity.copy()
         return obs_dict

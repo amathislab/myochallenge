@@ -59,6 +59,8 @@ class EnvironmentFactory:
             return gym.make("CustomMyoHandPoseRandom-v0", **kwargs)
         elif env_name == "CustomMyoPenTwirlRandom":
             return gym.make("CustomMyoHandPenTwirlRandom-v0", **kwargs)
+        elif env_name == "MuscleBaodingEnv":
+            return gym.make("MuscleBaoding-v1", **kwargs)
         elif env_name == "MuscleReorientEnv":
             return gym.make("MuscleReorientEnv-v0", **kwargs)
         elif env_name == "MuscleElbowPoseRandom":

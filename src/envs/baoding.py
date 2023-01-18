@@ -499,12 +499,12 @@ class CustomBaodingP2Env(BaodingEnvV1):
 
             if np.random.uniform(0, 1) < self.overlap_probability:
                 self.ball_1_starting_angle = 3.0 * np.pi / 4.0
-            elif self.limit_init_angle:
+            elif self.limit_init_angle is not None:
                 random_phase = self.np_random.uniform(
                     low=-self.limit_init_angle, high=self.limit_init_angle
                 )
 
-                if self.beta_init_angle:
+                if self.beta_init_angle is not None:
                     # use beta distribution to sample the angle instead of uniform
                     # use this to visualize the distribution looks of multiplicative factors
                     # samples = np.random.choice([-1,1])*(np.random.beta(a,b,10_000))
@@ -564,7 +564,7 @@ class CustomBaodingP2Env(BaodingEnvV1):
             **self.obj_mass_range
         )  # call to mj_setConst(m,d) is being ignored. Derive quantities wont be updated. Die is simple shape. So this is reasonable approximation.
 
-        if self.beta_ball_mass:
+        if self.beta_ball_mass is not None:
             self.sim.model.body_mass[self.object1_bid] = (
                 self.np_random.beta(self.beta_ball_mass[0], self.beta_ball_mass[1])
                 * (self.obj_mass_range["high"] - self.obj_mass_range["low"])
@@ -591,7 +591,7 @@ class CustomBaodingP2Env(BaodingEnvV1):
             **self.obj_size_range
         )
 
-        if self.beta_ball_size:
+        if self.beta_ball_size is not None:
             self.sim.model.geom_size[self.object1_gid] = (
                 self.np_random.beta(self.beta_ball_size[0], self.beta_ball_size[1])
                 * (self.obj_size_range["high"] - self.obj_size_range["low"])
@@ -645,6 +645,11 @@ class CustomBaodingP2Env(BaodingEnvV1):
             self.set_state(qpos, qvel)
 
         return self.get_obs()
+
+    def step(self, action):
+        obs, reward, done, info = super().step(action)
+        info.update(info.get("rwd_dict"))
+        return obs, reward, done, info
 
 
 class MixtureModelBaodingEnv(CustomBaodingP2Env):  # pylint: disable=abstract-method
@@ -712,3 +717,81 @@ class MixtureModelBaodingEnv(CustomBaodingP2Env):  # pylint: disable=abstract-me
             episode_starts = dones
 
         return obs
+
+
+class MuscleBaodingEnv(CustomBaodingP2Env):
+    MUSCLE_OBS_KEYS = [
+        'muscle_len', 'muscle_vel',
+        'object1_pos', 'object1_velp',
+        'object2_pos', 'object2_velp',
+        'target1_pos', 'target2_pos',
+        'target1_err', 'target2_err',
+        ]
+    
+    def _setup(
+        self,
+        frame_skip: int = 10,
+        drop_th=1.25,  # drop height threshold
+        proximity_th=0.015,  # object-target proximity threshold
+        goal_time_period=(5, 5),  # target rotation time period
+        goal_xrange=(0.025, 0.025),  # target rotation: x radius (0.03)
+        goal_yrange=(0.028, 0.028),  # target rotation: x radius (0.02 * 1.5 * 1.2)
+        obj_size_range=(0.018, 0.024),  # Object size range. Nominal 0.022
+        obj_mass_range=(0.030, 0.300),  # Object weight range. Nominal 43 gms
+        obj_friction_change=(0.2, 0.001, 0.00002),
+        task_choice="fixed",  # fixed/ random
+        obs_keys: list = MUSCLE_OBS_KEYS,
+        weighted_reward_keys: list = BaodingEnvV1.DEFAULT_RWD_KEYS_AND_WEIGHTS,
+        obs_mode="array",  # "array" or "dict"
+        enable_rsi=False,  # random state init for balls
+        rsi_probability=1,  # probability of implementing RSI
+        balls_overlap=False,
+        overlap_probability=0,
+        limit_init_angle=False,
+        beta_init_angle=None,
+        beta_ball_size=None,
+        beta_ball_mass=None,
+        noise_fingers=0,
+        **kwargs,
+    ):
+        self.obs_mode = obs_mode
+        super()._setup(
+            frame_szip=frame_skip,
+            drop_th=drop_th,
+            proximity_th=proximity_th,
+            goal_time_period=goal_time_period,
+            goal_xrange=goal_xrange,
+            goal_yrange=goal_yrange,
+            obj_size_range=obj_size_range,
+            obj_mass_range=obj_mass_range,
+            obj_friction_change=obj_friction_change,
+            task_choice=task_choice,
+            obs_keys=obs_keys,
+            weighted_reward_keys=weighted_reward_keys,
+            enable_rsi=enable_rsi,
+            rsi_probability=rsi_probability,
+            balls_overlap=balls_overlap,
+            overlap_probability=overlap_probability,
+            limit_init_angle=limit_init_angle,
+            beta_init_angle=beta_init_angle,
+            beta_ball_size=beta_ball_size,
+            beta_ball_mass=beta_ball_mass,
+            noise_fingers=noise_fingers,
+            **kwargs
+            
+        )
+        
+    def get_obs_dict(self, sim):
+        obs_dict = super().get_obs_dict(sim)
+        obs_dict["muscle_len"] = sim.data.actuator_length.copy()
+        obs_dict["muscle_vel"] = sim.data.actuator_velocity.copy()
+        return obs_dict
+    
+    def get_obs(self):
+        obs = super().get_obs()
+        if self.obs_mode == "array":
+            return obs
+        elif self.obs_mode == "dict":
+            return self.obs_dict
+        else:
+            raise ValueError("Unknown observation mode: ", self.obs_mode)

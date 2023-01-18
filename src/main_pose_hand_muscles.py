@@ -14,55 +14,67 @@ from metrics.custom_callbacks import EnvDumpCallback, TensorboardCallback
 from train.trainer import MyoTrainer
 
 # define constants
-ENV_NAME = "CustomMyoBaodingBallsP2"
+ENV_NAME = "MuscleHandPoseRandom"
 
 now = datetime.now().strftime("%Y-%m-%d/%H-%M-%S")
-TENSORBOARD_LOG = os.path.join(ROOT_DIR, "output", "training", now)
+TENSORBOARD_LOG = (
+    os.path.join(ROOT_DIR, "output", "training", now) + "_hand_pose_muscle_obs_full_from_scratch"
+)
 
-load_folder = "trained_models/baoding_phase2/alberto_518/"
-PATH_TO_NORMALIZED_ENV = load_folder + "training_env.pkl"
-PATH_TO_PRETRAINED_NET = load_folder + "best_model.zip"
+# Path to normalized Vectorized environment and best model (if not first task)
+PATH_TO_NORMALIZED_ENV = None
+PATH_TO_PRETRAINED_NET = None
 
 # Reward structure and task parameters:
 config = {
     "weighted_reward_keys": {
-        "pos_dist_1": 2,
-        "pos_dist_2": 2,
+        "pose": 1,
+        "bonus": 0,
+        "penalty": 1,
         "act_reg": 0,
-        "alive": 0,
-        "solved": 5,
+        "solved": 1,
         "done": 0,
         "sparse": 0,
     },
-    "task_choice": "random",
-    # custom params for curriculum learning
-    "enable_rsi": False,
-    "rsi_probability": 0,
-    "balls_overlap": False,
-    "overlap_probability": 0,
-    "noise_fingers": 0,
-    "limit_init_angle": False,
-    # "beta_init_angle": [0.9,0.9], # caution: doesn't work if limit_init_angle = False
-    "goal_time_period": [4, 6],  # phase 2: (4, 6)
-    "goal_xrange": (0.020, 0.030),  # phase 2: (0.020, 0.030)
-    "goal_yrange": (0.022, 0.032),  # phase 2: (0.022, 0.032)
-    # Randomization in physical properties of the baoding balls
-    "obj_size_range": (0.018, 0.022),
-    "obj_mass_range": (0.030, 0.300),
-    "obj_friction_change": (0.2, 0.001, 0.00002),
+    "reset_type": "init",
+    "sds_distance": None,
+    "weight_bodyname": None,
+    "weight_range": None,
 }
+
+max_episode_steps = 100  # default: 100
+
+# model_config = dict(
+#     device="cuda",
+#     batch_size=1024,
+#     n_steps=128,
+#     learning_rate=5e-05,
+#     ent_coef=5e-06,
+#     clip_range=0.3,
+#     gamma=0.99,
+#     gae_lambda=0.9,
+#     max_grad_norm=0.7,
+#     vf_coef=0.5,
+#     n_epochs=10,
+#     policy_kwargs=dict(
+#         ortho_init=False,
+#         log_std_init=-2,
+#         activation_fn=nn.ReLU,
+#         net_arch=[dict(pi=[256, 256], vf=[256, 256])],
+#     ),
+# )
 
 model_config = dict(
     device="cuda",
-    batch_size=32,
-    n_steps=128,
-    learning_rate=2.55673e-05,
-    ent_coef=3.62109e-06,
+    batch_size=4096,
+    n_steps=4096,
+    learning_rate=5e-05,
+    ent_coef=0.00025,
     clip_range=0.3,
     gamma=0.99,
     gae_lambda=0.9,
     max_grad_norm=0.7,
-    vf_coef=0.835671,
+    vf_coef=0.5,
     n_epochs=10,
     policy_kwargs=dict(
         ortho_init=False,
@@ -77,6 +89,7 @@ def make_parallel_envs(env_config, num_env, start_index=0):
     def make_env(_):
         def _thunk():
             env = EnvironmentFactory.create(ENV_NAME, **env_config)
+            env._max_episode_steps = max_episode_steps
             env = Monitor(env, TENSORBOARD_LOG)
             return env
 
@@ -114,17 +127,19 @@ if __name__ == "__main__":
     checkpoint_callback = CheckpointCallback(
         save_freq=25_000,
         save_path=TENSORBOARD_LOG,
-        save_vecnormalize="True",
+        save_vecnormalize=True,
         verbose=1,
     )
 
     tensorboard_callback = TensorboardCallback(
         info_keywords=(
-            "pos_dist_1",
-            "pos_dist_2",
+            "pose",
+            "bonus",
+            "penalty",
             "act_reg",
-            "alive",
+            "done",
             "solved",
+            "sparse",
         )
     )
 
@@ -136,7 +151,7 @@ if __name__ == "__main__":
         log_dir=TENSORBOARD_LOG,
         model_config=model_config,
         callbacks=[eval_callback, checkpoint_callback, tensorboard_callback],
-        timesteps=100_000_000,
+        timesteps=500_000_000,
     )
 
     # Train agent
