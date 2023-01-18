@@ -674,7 +674,7 @@ class MixtureModelBaodingEnv(CustomBaodingP2Env):  # pylint: disable=abstract-me
     @staticmethod
     def load_normalized_envs(env_name: str, env_path: str, config: dict = {}):
         """Load normalized environments from base environment path."""
-        env = EnvironmentFactory.register(env_name, **config)
+        env = EnvironmentFactory.create(env_name, **config)
         env = DummyVecEnv([lambda: env])
 
         return VecNormalize.load(env_path, env)
