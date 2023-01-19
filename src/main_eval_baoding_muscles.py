@@ -13,7 +13,7 @@ from train.trainer import MyoTrainer
 render = True
 num_episodes = 2_000
 
-env_name = "MuscleReorientEnv"
+env_name = "MuscleBaodingEnv"
 
 # Path to normalized Vectorized environment and best model (if not first task)
 PATH_TO_NORMALIZED_ENV = None
@@ -22,33 +22,33 @@ PATH_TO_PRETRAINED_NET = None
 # Reward structure and task parameters:
 config = {
     "weighted_reward_keys": {
-        "pos_dist": 0,
-        "rot_dist": 0,
-        "pos_dist_diff": 1,
-        "rot_dist_diff": 1,
-        "alive": 0,
+        "pos_dist_1": 1,
+        "pos_dist_2": 1,
         "act_reg": 0,
+        "alive": 1,
         "solved": 5,
         "done": 0,
         "sparse": 0,
     },
     "obs_mode": "dict",
-    "include_adapt_state": True,
-    "num_memory_steps": 5,
-    "goal_pos": (-0.02, 0.02),  # (-.020, .020), +- 2 cm
-    "goal_rot": (-3.14, 3.14),  # (-3.14, 3.14), +-180 degrees
-    # Randomization in physical properties of the die
-    "obj_size_change": 0,  # 0.007 +-7mm delta change in object size
-    "obj_friction_change": (0, 0, 0),  # (0.2, 0.001, 0.00002)
+    "include_adapt_state": False,
+    "num_memory_steps": 0,
+    "task_choice": "random",
+    # custom params for curriculum learning
     "enable_rsi": True,
-    "rsi_distance_pos": 0,
-    "rsi_distance_rot": 0,
-    # "goal_rot_x": [(1.57, 1.57)],
-    # "goal_rot_y": [(1.57, 1.57)],
-    # "goal_rot_z": [(1.57, 1.57)],
-    "goal_rot_x": None,
-    "goal_rot_y": None,
-    "goal_rot_z": None,
+    "rsi_probability": 1,
+    "balls_overlap": True,
+    "overlap_probability": 1,
+    "noise_fingers": None,
+    "limit_init_angle": 0,
+    # "beta_init_angle": [0.9,0.9], # caution: doesn't work if limit_init_angle = False
+    "goal_time_period": [1e6, 1e6],  # phase 2: (4, 6)
+    "goal_xrange": (0.025, 0.025),  # phase 2: (0.020, 0.030)
+    "goal_yrange": (0.028, 0.028),  # phase 2: (0.022, 0.032)
+    # Randomization in physical properties of the baoding balls
+    "obj_size_range": (0.022, 0.022),  # phase 2: (0.018, 0.024)
+    "obj_mass_range": (0.043, 0.043),  # phase 2: (0.030, 0.300)
+    "obj_friction_change": (0, 0, 0),  # phase 2: (0.2, 0.001, 0.00002)
 }
 
 

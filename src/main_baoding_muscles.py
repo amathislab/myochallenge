@@ -24,7 +24,6 @@ TENSORBOARD_LOG = (
 PATH_TO_NORMALIZED_ENV = None
 PATH_TO_PRETRAINED_NET = None
 
-# Reward structure and task parameters:
 config = {
     "weighted_reward_keys": {
         "pos_dist_1": 1,
@@ -41,7 +40,6 @@ config = {
     "rsi_probability": 1,
     "balls_overlap": True,
     "overlap_probability": 1,
-    "noise_fingers": 0,
     "limit_init_angle": 0,
     # "beta_init_angle": [0.9,0.9], # caution: doesn't work if limit_init_angle = False
     "goal_time_period": [1e6, 1e6],  # phase 2: (4, 6)
@@ -52,7 +50,6 @@ config = {
     "obj_mass_range": (0.043, 0.043),  # phase 2: (0.030, 0.300)
     "obj_friction_change": (0, 0, 0),  # phase 2: (0.2, 0.001, 0.00002)
 }
-
 model_config = dict(
     device="cuda",
     batch_size=32,
