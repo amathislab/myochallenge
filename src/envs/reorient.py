@@ -7,6 +7,8 @@ from myosuite.envs.myo.base_v0 import BaseV0
 from myosuite.envs.myo.myochallenge.reorient_v0 import ReorientEnvV0
 from myosuite.utils.quat_math import euler2quat
 
+from envs.env_mixins import DictObsMixin
+
 
 class CustomReorientEnv(ReorientEnvV0):
     def get_reward_dict(self, obs_dict):
@@ -236,7 +238,7 @@ class CustomReorientEnv(ReorientEnvV0):
         return obs, reward, done, info
 
 
-class MuscleReorientEnv(CustomReorientEnv):
+class MuscleReorientEnv(CustomReorientEnv, DictObsMixin):
     MUSCLE_OBS_KEYS = [
         "muscle_len",
         "muscle_vel",
@@ -248,61 +250,46 @@ class MuscleReorientEnv(CustomReorientEnv):
         "rot_err",
     ]
 
+    def __init__(
+        self,
+        model_path,
+        obsd_model_path=None,
+        seed=None,
+        include_adapt_state=False,
+        num_memory_steps=30,
+        obs_mode="array",  # "array" or "dict"
+        **kwargs,
+    ):
+        self._init_done = False
+        super().__init__(
+            model_path, obsd_model_path=obsd_model_path, seed=seed, **kwargs
+        )
+        self.action_dim = self.sim.model.nu
+        self._init_addon(obs_mode, include_adapt_state, num_memory_steps)
+        self._init_done = True
+
     def _setup(
         self,
         obs_keys: list = MUSCLE_OBS_KEYS,
-        weighted_reward_keys: list = ReorientEnvV0.DEFAULT_RWD_KEYS_AND_WEIGHTS,
-        obs_mode="array",  # "array" or "dict"
-        goal_pos=(0.0, 0.0),  # goal position range (relative to initial pos)
-        goal_rot=(0.785, 0.785),  # goal rotation range (relative to initial rot)
-        obj_size_change=0,  # object size change (relative to initial size)
-        obj_friction_change=(
-            0,
-            0,
-            0,
-        ),  # object friction change (relative to initial size)
-        pos_th=0.025,  # position error threshold
-        rot_th=0.262,  # rotation error threshold
-        drop_th=0.200,  # drop height threshold
-        enable_rsi=False,
-        rsi_distance_pos=0,
-        rsi_distance_rot=0,
-        goal_rot_x=None,
-        goal_rot_y=None,
-        goal_rot_z=None,
         **kwargs,
     ):
-        self.obs_mode = obs_mode
         super()._setup(
             obs_keys=obs_keys,
-            weighted_reward_keys=weighted_reward_keys,
-            goal_pos=goal_pos,
-            goal_rot=goal_rot,
-            obj_size_change=obj_size_change,
-            obj_friction_change=obj_friction_change,
-            pos_th=pos_th,
-            rot_th=rot_th,
-            drop_th=drop_th,
-            enable_rsi=enable_rsi,
-            rsi_distance_pos=rsi_distance_pos,
-            rsi_distance_rot=rsi_distance_rot,
-            goal_rot_x=goal_rot_x,
-            goal_rot_y=goal_rot_y,
-            goal_rot_z=goal_rot_z,
             **kwargs,
         )
+
+    def reset(self, reset_qpos=None, reset_qvel=None):
+        super().reset(reset_qpos=reset_qpos, reset_qvel=reset_qvel)
+        return self.create_history_reset_state(self.obs_dict)
+
+    def step(self, action):
+        obs, reward, done, info = super().step(action)
+        if self._init_done:
+            obs = self.create_history_step_state(self.obs_dict)
+        return obs, reward, done, info
 
     def get_obs_dict(self, sim):
         obs_dict = super().get_obs_dict(sim)
         obs_dict["muscle_len"] = sim.data.actuator_length.copy()
         obs_dict["muscle_vel"] = sim.data.actuator_velocity.copy()
         return obs_dict
-
-    def get_obs(self):
-        obs = super().get_obs()
-        if self.obs_mode == "array":
-            return obs
-        elif self.obs_mode == "dict":
-            return self.obs_dict
-        else:
-            raise ValueError("Unknown observation mode: ", self.obs_mode)
