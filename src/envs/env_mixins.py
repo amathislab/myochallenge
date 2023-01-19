@@ -55,7 +55,8 @@ class DictObsMixin:
         """
         if self._include_adapt_state:
             self._obs_prev_list.clear()
-
+            self._obs_prev_list.appendleft(obs_dict)
+            
         return_dict = {}
         for key, obs_value in obs_dict.items():
             return_value = np.zeros((1 + self.num_memory_steps, *(obs_value.shape)))
@@ -83,7 +84,7 @@ class DictObsMixin:
             return_value[-1, :] = obs_value
             if self._include_adapt_state:
                 for idx, past_obs in enumerate(self._obs_prev_list):
-                    return_value[self.num_memory_steps - idx, :] = past_obs[key]
+                    return_value[self.num_memory_steps - idx - 1, :] = past_obs[key]
             return_dict[key] = return_value
         if self._include_adapt_state:
             self._obs_prev_list.appendleft(obs_dict)

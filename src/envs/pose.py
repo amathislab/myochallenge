@@ -1,6 +1,7 @@
 import numpy as np
 from myosuite.envs.myo.base_v0 import BaseV0
 from myosuite.envs.myo.pose_v0 import PoseEnvV0
+from envs.env_mixins import DictObsMixin
 
 
 class CustomPoseEnv(PoseEnvV0):
@@ -115,58 +116,53 @@ class CustomPoseEnv(PoseEnvV0):
         return target_pose
 
 
-class MusclePoseEnv(CustomPoseEnv):
+class MusclePoseEnv(CustomPoseEnv, DictObsMixin):
     MUSCLE_OBS_KEYS = [
         "muscle_len",
         "muscle_vel",
         "pose_err",
     ]
 
-    def _setup(
+    def __init__(
         self,
-        viz_site_targets: tuple = None,  # site to use for targets visualization []
-        target_jnt_range: dict = None,  # joint ranges as tuples {name:(min, max)}_nq
-        target_jnt_value: list = None,  # desired joint vector [des_qpos]_nq
+        model_path,
+        obsd_model_path=None,
+        seed=None,
+        include_adapt_state=False,
+        num_memory_steps=30,
         obs_mode="array",  # "array" or "dict"
-        reset_type="init",  # none; init; random; sds
-        target_type="generate",  # generate; switch; fixed
-        obs_keys: list = MUSCLE_OBS_KEYS,
-        weighted_reward_keys: dict = PoseEnvV0.DEFAULT_RWD_KEYS_AND_WEIGHTS,
-        pose_thd=0.35,
-        weight_bodyname=None,
-        weight_range=None,
-        sds_distance=0,
-        target_distance=1,  # for non-SDS curriculum, the target is set at a fraction of the full distance
         **kwargs,
     ):
-        self.obs_mode = obs_mode
+        self._init_done = False
+        super().__init__(
+            model_path, obsd_model_path=obsd_model_path, seed=seed, **kwargs
+        )
+        self.action_dim = self.sim.model.nu
+        self._init_addon(obs_mode, include_adapt_state, num_memory_steps)
+        self._init_done = True
+
+    def _setup(
+        self,
+        obs_keys: list = MUSCLE_OBS_KEYS,
+        **kwargs,
+    ):
         super()._setup(
-            viz_site_targets=viz_site_targets,
-            target_jnt_range=target_jnt_range,
-            target_jnt_value=target_jnt_value,
-            reset_type=reset_type,
-            target_type=target_type,
             obs_keys=obs_keys,
-            weighted_reward_keys=weighted_reward_keys,
-            pose_thd=pose_thd,
-            weight_bodyname=weight_bodyname,
-            weight_range=weight_range,
-            sds_distance=sds_distance,
-            target_distance=target_distance,
             **kwargs,
         )
-        
+    
+    def reset(self):
+        super().reset()
+        return self.create_history_reset_state(self.obs_dict)
+
+    def step(self, action):
+        obs, reward, done, info = super().step(action)
+        if self._init_done:
+            obs = self.create_history_step_state(self.obs_dict)
+        return obs, reward, done, info
+    
     def get_obs_dict(self, sim):
         obs_dict = super().get_obs_dict(sim)
         obs_dict["muscle_len"] = sim.data.actuator_length.copy()
         obs_dict["muscle_vel"] = sim.data.actuator_velocity.copy()
         return obs_dict
-
-    def get_obs(self):
-        obs = super().get_obs()
-        if self.obs_mode == "array":
-            return obs
-        elif self.obs_mode == "dict":
-            return self.obs_dict
-        else:
-            raise ValueError("Unknown observation mode: ", self.obs_mode)

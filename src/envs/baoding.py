@@ -9,6 +9,7 @@ from sb3_contrib import RecurrentPPO
 from stable_baselines3.common.vec_env import VecNormalize
 from stable_baselines3.common.vec_env.dummy_vec_env import DummyVecEnv
 
+from envs.env_mixins import DictObsMixin
 from envs.environment_factory import EnvironmentFactory
 
 
@@ -163,7 +164,7 @@ class CustomBaodingEnv(BaodingEnvV1):
         )
 
         # reset goal
-        if time_period == None:
+        if time_period is None:
             time_period = self.np_random.uniform(
                 low=self.goal_time_period[0], high=self.goal_time_period[1]
             )
@@ -315,7 +316,7 @@ class CustomBaodingP2Env(BaodingEnvV1):
         rsi_probability=1,  # probability of implementing RSI
         balls_overlap=False,
         overlap_probability=0,
-        limit_init_angle=False,
+        limit_init_angle=None,
         beta_init_angle=None,
         beta_ball_size=None,
         beta_ball_mass=None,
@@ -497,7 +498,7 @@ class CustomBaodingP2Env(BaodingEnvV1):
         if self.task_choice == "random":
             self.which_task = self.np_random.choice(Task)
 
-            if np.random.uniform(0, 1) < self.overlap_probability:
+            if np.random.uniform(0, 1) <= self.overlap_probability:
                 self.ball_1_starting_angle = 3.0 * np.pi / 4.0
             elif self.limit_init_angle is not None:
                 random_phase = self.np_random.uniform(
@@ -546,7 +547,7 @@ class CustomBaodingP2Env(BaodingEnvV1):
         )
 
         # reset goal
-        if time_period == None:
+        if time_period is None:
             time_period = self.np_random.uniform(
                 low=self.goal_time_period[0], high=self.goal_time_period[1]
             )
@@ -608,27 +609,28 @@ class CustomBaodingP2Env(BaodingEnvV1):
         self.robot.reset(qpos, qvel)
 
         if self.rsi and np.random.uniform(0, 1) < self.rsi_probability:
-
             random_phase = np.random.uniform(low=-np.pi, high=np.pi)
             self.ball_1_starting_angle = 3.0 * np.pi / 4.0 + random_phase
             self.ball_2_starting_angle = -1.0 * np.pi / 4.0 + random_phase
-            self.goal = (
-                self.create_goal_trajectory(time_step=self.dt, time_period=time_period)
-                if reset_goal is None
-                else reset_goal.copy()
-            )
+            # self.goal = (
+            #     self.create_goal_trajectory(time_step=self.dt, time_period=time_period)
+            #     if reset_goal is None
+            #     else reset_goal.copy()
+            # )
 
-            # reset scene (MODIFIED from base class MujocoEnv)
-            qpos = self.init_qpos.copy() if reset_pose is None else reset_pose
-            qvel = self.init_qvel.copy() if reset_vel is None else reset_vel
+            # # reset scene (MODIFIED from base class MujocoEnv)
+            # qpos = self.init_qpos.copy() if reset_pose is None else reset_pose
+            # qvel = self.init_qvel.copy() if reset_vel is None else reset_vel
             self.robot.reset(qpos, qvel)
             self.step(np.zeros(39))
             # update ball positions
-            obs = self.get_obs().copy()
-            qpos[23] = obs[35]  # ball 1 x-position
-            qpos[24] = obs[36]  # ball 1 y-position
-            qpos[30] = obs[38]  # ball 2 x-position
-            qpos[31] = obs[39]  # ball 2 y-position
+            obs_dict = self.get_obs_dict(self.sim)
+            target_1_pos = obs_dict["target1_pos"]
+            target_2_pos = obs_dict["target2_pos"]
+            qpos[23] = target_1_pos[0]  # ball 1 x-position
+            qpos[24] = target_1_pos[1]  # ball 1 y-position
+            qpos[30] = target_2_pos[0]  # ball 2 x-position
+            qpos[31] = target_2_pos[1]  # ball 2 y-position
             self.set_state(qpos, qvel)
 
             if self.balls_overlap is False:
@@ -637,10 +639,7 @@ class CustomBaodingP2Env(BaodingEnvV1):
                 )
                 self.ball_2_starting_angle = self.ball_1_starting_angle - np.pi
 
-        if self.noise_fingers:
-            qpos = self.init_qpos.copy() if "qpos" not in locals() else qpos
-            qvel = self.init_qvel.copy() if reset_vel is None else reset_vel
-
+        if self.noise_fingers is not None:
             qpos = self._add_noise_to_finger_positions(qpos, self.noise_fingers)
             self.set_state(qpos, qvel)
 
@@ -700,7 +699,12 @@ class MixtureModelBaodingEnv(CustomBaodingP2Env):  # pylint: disable=abstract-me
         return model, envs
 
     def reset(self, reset_pose=None, reset_vel=None, reset_goal=None, time_period=None):
-        obs = super().reset()
+        obs = super().reset(
+            reset_pose=reset_pose,
+            reset_vel=reset_vel,
+            reset_goal=reset_goal,
+            time_period=time_period,
+        )
 
         # Take the first 19 steps with the base model; return the 20th obs as first
         lstm_states = None
@@ -719,79 +723,65 @@ class MixtureModelBaodingEnv(CustomBaodingP2Env):  # pylint: disable=abstract-me
         return obs
 
 
-class MuscleBaodingEnv(CustomBaodingP2Env):
+class MuscleBaodingEnv(CustomBaodingP2Env, DictObsMixin):
     MUSCLE_OBS_KEYS = [
-        'muscle_len', 'muscle_vel',
-        'object1_pos', 'object1_velp',
-        'object2_pos', 'object2_velp',
-        'target1_pos', 'target2_pos',
-        'target1_err', 'target2_err',
-        ]
-    
-    def _setup(
+        "muscle_len",
+        "muscle_vel",
+        "object1_pos",
+        "object1_velp",
+        "object2_pos",
+        "object2_velp",
+        "target1_pos",
+        "target2_pos",
+        "target1_err",
+        "target2_err",
+    ]
+
+    def __init__(
         self,
-        frame_skip: int = 10,
-        drop_th=1.25,  # drop height threshold
-        proximity_th=0.015,  # object-target proximity threshold
-        goal_time_period=(5, 5),  # target rotation time period
-        goal_xrange=(0.025, 0.025),  # target rotation: x radius (0.03)
-        goal_yrange=(0.028, 0.028),  # target rotation: x radius (0.02 * 1.5 * 1.2)
-        obj_size_range=(0.018, 0.024),  # Object size range. Nominal 0.022
-        obj_mass_range=(0.030, 0.300),  # Object weight range. Nominal 43 gms
-        obj_friction_change=(0.2, 0.001, 0.00002),
-        task_choice="fixed",  # fixed/ random
-        obs_keys: list = MUSCLE_OBS_KEYS,
-        weighted_reward_keys: list = BaodingEnvV1.DEFAULT_RWD_KEYS_AND_WEIGHTS,
+        model_path,
+        obsd_model_path=None,
+        seed=None,
+        include_adapt_state=False,
+        num_memory_steps=30,
         obs_mode="array",  # "array" or "dict"
-        enable_rsi=False,  # random state init for balls
-        rsi_probability=1,  # probability of implementing RSI
-        balls_overlap=False,
-        overlap_probability=0,
-        limit_init_angle=False,
-        beta_init_angle=None,
-        beta_ball_size=None,
-        beta_ball_mass=None,
-        noise_fingers=0,
         **kwargs,
     ):
-        self.obs_mode = obs_mode
-        super()._setup(
-            frame_szip=frame_skip,
-            drop_th=drop_th,
-            proximity_th=proximity_th,
-            goal_time_period=goal_time_period,
-            goal_xrange=goal_xrange,
-            goal_yrange=goal_yrange,
-            obj_size_range=obj_size_range,
-            obj_mass_range=obj_mass_range,
-            obj_friction_change=obj_friction_change,
-            task_choice=task_choice,
-            obs_keys=obs_keys,
-            weighted_reward_keys=weighted_reward_keys,
-            enable_rsi=enable_rsi,
-            rsi_probability=rsi_probability,
-            balls_overlap=balls_overlap,
-            overlap_probability=overlap_probability,
-            limit_init_angle=limit_init_angle,
-            beta_init_angle=beta_init_angle,
-            beta_ball_size=beta_ball_size,
-            beta_ball_mass=beta_ball_mass,
-            noise_fingers=noise_fingers,
-            **kwargs
-            
+        self._init_done = False
+        super().__init__(
+            model_path, obsd_model_path=obsd_model_path, seed=seed, **kwargs
         )
-        
+        self.action_dim = self.sim.model.nu
+        self._init_addon(obs_mode, include_adapt_state, num_memory_steps)
+        self._init_done = True
+
+    def _setup(
+        self,
+        obs_keys: list = MUSCLE_OBS_KEYS,
+        **kwargs,
+    ):
+        super()._setup(
+            obs_keys=obs_keys,
+            **kwargs,
+        )
+
+    def reset(self, reset_pose=None, reset_vel=None, reset_goal=None, time_period=None):
+        super().reset(
+            reset_pose=reset_pose,
+            reset_vel=reset_vel,
+            reset_goal=reset_goal,
+            time_period=time_period,
+        )
+        return self.create_history_reset_state(self.obs_dict)
+
+    def step(self, action):
+        obs, reward, done, info = super().step(action)
+        if self._init_done:
+            obs = self.create_history_step_state(self.obs_dict)
+        return obs, reward, done, info
+
     def get_obs_dict(self, sim):
         obs_dict = super().get_obs_dict(sim)
         obs_dict["muscle_len"] = sim.data.actuator_length.copy()
         obs_dict["muscle_vel"] = sim.data.actuator_velocity.copy()
         return obs_dict
-    
-    def get_obs(self):
-        obs = super().get_obs()
-        if self.obs_mode == "array":
-            return obs
-        elif self.obs_mode == "dict":
-            return self.obs_dict
-        else:
-            raise ValueError("Unknown observation mode: ", self.obs_mode)
