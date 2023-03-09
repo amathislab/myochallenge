@@ -10,14 +10,16 @@ from myosuite.utils.quat_math import euler2quat
 
 class CustomReorientEnv(ReorientEnvV0):
     def get_reward_dict(self, obs_dict):
-        pos_dist = np.abs(np.linalg.norm(self.obs_dict["pos_err"], axis=-1))
-        rot_dist = np.abs(np.linalg.norm(self.obs_dict["rot_err"], axis=-1))
+        pos_dist_new = np.abs(np.linalg.norm(self.obs_dict["pos_err"], axis=-1))
+        rot_dist_new = np.abs(np.linalg.norm(self.obs_dict["rot_err"], axis=-1))
+        pos_dist_diff = self.pos_dist - pos_dist_new
+        rot_dist_diff = self.rot_dist - rot_dist_new
         act_mag = (
             np.linalg.norm(self.obs_dict["act"], axis=-1) / self.sim.model.na
             if self.sim.model.na != 0
             else 0
         )
-        drop = pos_dist > self.drop_th
+        drop = pos_dist_new > self.drop_th
 
         rwd_dict = collections.OrderedDict(
             (
@@ -26,17 +28,19 @@ class CustomReorientEnv(ReorientEnvV0):
                 # Update reward keys (DEFAULT_RWD_KEYS_AND_WEIGHTS) accordingly to update final rewards
                 # Examples: Env comes pre-packaged with two keys pos_dist and rot_dist
                 # Optional Keys
-                ("pos_dist", -1.0 * pos_dist),
-                ("rot_dist", -1.0 * rot_dist),
+                ("pos_dist", -1.0 * pos_dist_new),
+                ("rot_dist", -1.0 * rot_dist_new),
+                ("pos_dist_diff", pos_dist_diff),
+                ("rot_dist_diff", rot_dist_diff),
                 ("alive", ~drop),
                 # Must keys
                 ("act_reg", -1.0 * act_mag),
-                ("sparse", -rot_dist - 10.0 * pos_dist),
+                ("sparse", -rot_dist_new - 10.0 * pos_dist_new),
                 (
                     "solved",
-                    (pos_dist < self.pos_th)
-                    and (rot_dist < self.rot_th)
-                    and (not drop),
+                    ((pos_dist_new < self.pos_th)
+                    and (rot_dist_new < self.rot_th)
+                    and (not drop)) * np.ones((1, 1)),
                 ),
                 ("done", drop),
             )
@@ -57,6 +61,8 @@ class CustomReorientEnv(ReorientEnvV0):
         weighted_reward_keys: list = ReorientEnvV0.DEFAULT_RWD_KEYS_AND_WEIGHTS,
         goal_pos=(0.0, 0.0),  # goal position range (relative to initial pos)
         goal_rot=(0.785, 0.785),  # goal rotation range (relative to initial rot)
+        obj_size_change = 0,        # object size change (relative to initial size)
+        obj_friction_change = (0,0,0),# object friction change (relative to initial size)
         pos_th=0.025,  # position error threshold
         rot_th=0.262,  # rotation error threshold
         drop_th=0.200,  # drop height threshold
@@ -89,6 +95,22 @@ class CustomReorientEnv(ReorientEnvV0):
         self.goal_rot_x = goal_rot_x
         self.goal_rot_y = goal_rot_y
         self.goal_rot_z = goal_rot_z
+        self.pos_dist = 0
+        self.rot_dist = 0
+        
+        # setup for object randomization
+        self.target_gid = self.sim.model.geom_name2id('target_dice')
+        self.target_default_size = self.sim.model.geom_size[self.target_gid].copy()
+
+        object_bid = self.sim.model.body_name2id('Object')
+        self.object_gid0 = self.sim.model.body_geomadr[object_bid]
+        self.object_gidn = self.object_gid0 + self.sim.model.body_geomnum[object_bid]
+        self.object_default_size = self.sim.model.geom_size[self.object_gid0:self.object_gidn].copy()
+        self.object_default_pos = self.sim.model.geom_pos[self.object_gid0:self.object_gidn].copy()
+
+        self.obj_size_change = {'high':obj_size_change, 'low':-obj_size_change}
+        self.obj_friction_range = {'high':self.sim.model.geom_friction[self.object_gid0:self.object_gidn] + obj_friction_change,
+                                    'low':self.sim.model.geom_friction[self.object_gid0:self.object_gidn] - obj_friction_change}
 
         BaseV0._setup(
             self,
@@ -110,6 +132,21 @@ class CustomReorientEnv(ReorientEnvV0):
 
         default_init_pos = np.array([-0.24, -0.535, 1.46])
         default_init_rot = np.array([1.0, 0.0, 0.0, 0.0])
+
+        # Die friction changes
+        self.sim.model.geom_friction[self.object_gid0:self.object_gidn] = self.np_random.uniform(**self.obj_friction_range)
+
+        # Die and Target size changes
+        del_size = self.np_random.uniform(**self.obj_size_change)
+        # adjust size of target
+        self.sim.model.geom_size[self.target_gid] = self.target_default_size + del_size
+        # adjust size of die
+        self.sim.model.geom_size[self.object_gid0:self.object_gidn-3][:,1] = self.object_default_size[:-3][:,1] + del_size
+        self.sim.model.geom_size[self.object_gidn-3:self.object_gidn] = self.object_default_size[-3:] + del_size
+        # adjust boundary of die
+        object_gpos = self.sim.model.geom_pos[self.object_gid0:self.object_gidn]
+        self.sim.model.geom_pos[self.object_gid0:self.object_gidn] = object_gpos/abs(object_gpos+1e-16) * (abs(self.object_default_pos) + del_size)
+
 
         if self.rsi:
 
@@ -135,10 +172,13 @@ class CustomReorientEnv(ReorientEnvV0):
 
             self.robot.reset(qpos, qvel)
 
-            return self.get_obs()
+            obs = self.get_obs()
 
         else:
-            return MujocoEnv.reset(self)
+            obs = MujocoEnv.reset(self)
+        self.pos_dist = np.abs(np.linalg.norm(self.obs_dict["pos_err"], axis=-1))
+        self.rot_dist = np.abs(np.linalg.norm(self.obs_dict["rot_err"], axis=-1))
+        return obs
 
     def set_orientation(self):
         x_low, x_high = (
@@ -163,3 +203,11 @@ class CustomReorientEnv(ReorientEnvV0):
         self.sim.model.body_quat[self.goal_bid] = euler2quat(
             np.array([goal_rot_x, goal_rot_y, goal_rot_z])
         )
+
+    def step(self, action):
+        obs, reward, done, info = super().step(action)
+        self.pos_dist = np.abs(np.linalg.norm(self.obs_dict["pos_err"], axis=-1))
+        self.rot_dist = np.abs(np.linalg.norm(self.obs_dict["rot_err"], axis=-1))
+        info.update(info.get("rwd_dict"))
+        return obs, reward, done, info
+        

@@ -1,5 +1,4 @@
 import gym
-from ray.tune import register_env
 
 
 class EnvironmentFactory:
@@ -38,24 +37,27 @@ class EnvironmentFactory:
             return gym.make("CustomMyoChallengeBaodingP1-v1", **kwargs)
         elif env_name == "CustomMyoReorientP1":
             return gym.make("CustomMyoChallengeDieReorientP1-v0", **kwargs)
+        elif env_name == "CustomMyoReorientP2":
+            return gym.make("CustomMyoChallengeDieReorientP2-v0", **kwargs)
         elif env_name == "MyoBaodingBallsP2":
             return gym.make("myoChallengeBaodingP2-v1", **kwargs)
         elif env_name == "CustomMyoBaodingBallsP2":
             return gym.make("CustomMyoChallengeBaodingP2-v1", **kwargs)
         elif env_name == "MixtureModelBaodingEnv":
             return gym.make("MixtureModelBaoding-v1", **kwargs)
-
-    @staticmethod
-    def register(env_name, **kwargs):
-        """Registers the specified environment, so that it can be instantiated
-        by the RLLib algorithms by name.
-
-        Args:
-            env_name (str): name of the environment
-
-        Returns:
-            gym.env: the registered environment
-        """
-        env = EnvironmentFactory.create(env_name, **kwargs)
-        register_env(env_name, lambda _: EnvironmentFactory.create(env_name, **kwargs))
-        return env
+        elif env_name == "CustomMyoElbowPoseFixed":
+            return gym.make("CustomMyoElbowPoseFixed-v0", **kwargs)
+        elif env_name == "CustomMyoElbowPoseRandom":
+            return gym.make("CustomMyoElbowPoseRandom-v0", **kwargs)
+        elif env_name == "CustomMyoFingerPoseFixed":
+            return gym.make("CustomMyoFingerPoseFixed-v0", **kwargs)
+        elif env_name == "CustomMyoFingerPoseRandom":
+            return gym.make("CustomMyoFingerPoseRandom-v0", **kwargs)
+        elif env_name == "CustomMyoHandPoseFixed":
+            return gym.make("CustomMyoHandPoseFixed-v0", **kwargs)
+        elif env_name == "CustomMyoHandPoseRandom":
+            return gym.make("CustomMyoHandPoseRandom-v0", **kwargs)
+        elif env_name == "CustomMyoPenTwirlRandom":
+            return gym.make("CustomMyoHandPenTwirlRandom-v0", **kwargs)
+        else:
+            raise ValueError("Environment name not recognized:", env_name)

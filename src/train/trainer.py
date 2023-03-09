@@ -3,6 +3,7 @@ import os
 from abc import ABC
 from dataclasses import dataclass, field
 from typing import List
+
 from sb3_contrib import RecurrentPPO
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.vec_env import VecNormalize
@@ -28,12 +29,12 @@ class Trainer(ABC):
 
 
 @dataclass
-class BaodingTrainer:
+class MyoTrainer:
     envs: VecNormalize
     env_config: dict
     load_model_path: str
     log_dir: str
-    model_config: dict = None
+    model_config: dict = field(default_factory=dict)
     callbacks: List[BaseCallback] = field(default_factory=list)
     timesteps: int = 10_000_000
 

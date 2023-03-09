@@ -1,61 +1,73 @@
 import os
 import shutil
+import torch.nn as nn
 from datetime import datetime
-
 from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import VecNormalize
 from stable_baselines3.common.vec_env.subproc_vec_env import SubprocVecEnv
-
 from definitions import ROOT_DIR
 from envs.environment_factory import EnvironmentFactory
-from metrics.custom_callbacks import EnvDumpCallback
+from metrics.custom_callbacks import EnvDumpCallback, TensorboardCallback
 from train.trainer import MyoTrainer
 
+
 # define constants
-ENV_NAME = "CustomMyoBaodingBallsP2"
+ENV_NAME = "CustomMyoHandPoseRandom"
 
 now = datetime.now().strftime("%Y-%m-%d/%H-%M-%S")
-TENSORBOARD_LOG = os.path.join(ROOT_DIR, "output", "training", now)
+TENSORBOARD_LOG = os.path.join(ROOT_DIR, "output", "training", now) + "_hand_pose_random_static"
 
-load_folder = "trained_models/baoding_phase2/alberto_518/"
-PATH_TO_NORMALIZED_ENV = load_folder + "training_env.pkl"
-PATH_TO_PRETRAINED_NET = load_folder + "best_model.zip"
+# Path to normalized Vectorized environment and best model (if not first task)
+PATH_TO_NORMALIZED_ENV = None
+PATH_TO_PRETRAINED_NET = None
 
 # Reward structure and task parameters:
 config = {
     "weighted_reward_keys": {
-        "pos_dist_1": 2,
-        "pos_dist_2": 2,
+        "pose": 1,
+        "bonus": 0,
+        "penalty": 1,
         "act_reg": 0,
-        "alive": 0,
-        "solved": 5,
+        "solved": 1,
         "done": 0,
         "sparse": 0,
     },
-    "task_choice": "random",
-    # custom params for curriculum learning
-    "enable_rsi": False,
-    "rsi_probability": 0,
-    "balls_overlap": False,
-    "overlap_probability": 0,
-    "noise_fingers": 0,
-    "limit_init_angle": False,
-    # "beta_init_angle": [0.9,0.9], # caution: doesn't work if limit_init_angle = False
-    "goal_time_period": [4, 6],  # phase 2: (4, 6)
-    "goal_xrange": (0.020, 0.030),  # phase 2: (0.020, 0.030)
-    "goal_yrange": (0.022, 0.032),  # phase 2: (0.022, 0.032)
-    # Randomization in physical properties of the baoding balls
-    "obj_size_range": (0.018, 0.022),
-    "obj_mass_range": (0.030, 0.300),
-    "obj_friction_change": (0.2, 0.001, 0.00002),
+    # Randomization in physical properties of the die
+    "reset_type": "sds",
+    "sds_distance": 0,
+    "weight_bodyname": None,
+    "weight_range": None,
 }
+
+max_episode_steps = 100  # default: 100
+
+model_config = dict(
+    device="cuda",
+    batch_size=32,
+    n_steps=128,
+    learning_rate=2.55673e-05,
+    ent_coef=3.62109e-06,
+    clip_range=0.3,
+    gamma=0.99,
+    gae_lambda=0.9,
+    max_grad_norm=0.7,
+    vf_coef=0.835671,
+    n_epochs=10,
+    policy_kwargs=dict(
+        ortho_init=False,
+        log_std_init=-2,
+        activation_fn=nn.ReLU,
+        net_arch=[dict(pi=[256, 256], vf=[256, 256])],
+    ),
+)
 
 # Function that creates and monitors vectorized environments:
 def make_parallel_envs(env_config, num_env, start_index=0):
     def make_env(_):
         def _thunk():
-            env = EnvironmentFactory.register(ENV_NAME, **env_config)
+            env = EnvironmentFactory.create(ENV_NAME, **env_config)
+            env._max_episode_steps = max_episode_steps
             env = Monitor(env, TENSORBOARD_LOG)
             return env
 
@@ -71,14 +83,15 @@ if __name__ == "__main__":
 
     # Create and wrap the training and evaluations environments
     envs = make_parallel_envs(config, 16)
-    envs = VecNormalize.load(PATH_TO_NORMALIZED_ENV, envs)
-
-    eval_env = make_parallel_envs(config, num_env=1)
-    eval_env = VecNormalize.load(PATH_TO_NORMALIZED_ENV, eval_env)
+    
+    if PATH_TO_NORMALIZED_ENV is not None:
+        envs = VecNormalize.load(PATH_TO_NORMALIZED_ENV, envs)
+    else:
+        envs = VecNormalize(envs)
 
     # Define callbacks for evaluation and saving the agent
     eval_callback = EvalCallback(
-        eval_env=eval_env,
+        eval_env=envs,
         callback_on_new_best=EnvDumpCallback(TENSORBOARD_LOG, verbose=0),
         n_eval_episodes=10,
         best_model_save_path=TENSORBOARD_LOG,
@@ -92,8 +105,12 @@ if __name__ == "__main__":
     checkpoint_callback = CheckpointCallback(
         save_freq=25_000,
         save_path=TENSORBOARD_LOG,
-        save_vecnormalize="True",
+        save_vecnormalize=True,
         verbose=1,
+    )
+    
+    tensorboard_callback = TensorboardCallback(
+        info_keywords=("pose", "bonus", "penalty", "act_reg", "done", "solved", "sparse")
     )
 
     # Define trainer
@@ -102,12 +119,8 @@ if __name__ == "__main__":
         env_config=config,
         load_model_path=PATH_TO_PRETRAINED_NET,
         log_dir=TENSORBOARD_LOG,
-        model_config={
-            "lr_schedule": lambda _: 5e-05,
-            "learning_rate": lambda _: 5e-05,
-            "clip_range": lambda _: 0.2,
-        },
-        callbacks=[eval_callback, checkpoint_callback],
+        model_config=model_config,
+        callbacks=[eval_callback, checkpoint_callback, tensorboard_callback],
         timesteps=10_000_000,
     )
 
