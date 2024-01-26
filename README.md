@@ -1,6 +1,7 @@
 # MyoChallenge 2022
 
-This is the code repository for winning the Boading ball task of the [MyoChallenge 2022](https://sites.google.com/view/myochallenge). Our team was named _stiff fingers_, and this name was inspired by the fact as the fingers were not too agile.... perhaps fingers are not task relevant.
+This is the code repository for winning the Boading ball task of the [MyoChallenge 2022](https://sites.google.com/view/myochallenge). Our team was named _stiff fingers_, and this name was inspired by the fact as the fingers were not too agile.... perhaps bending the fingers themselves is not too task relevant. If you want to read more about the challenge and our solution, check out this exciting article summarizing the challenge and winning solutions in the [Proceedings of Machine Learning Research](https://proceedings.mlr.press/v220/caggiano22a.html)! We also wrote a manuscript further detailing our solution, and analyzing the learned policy. Analyzing the policy against data from human subjects revealed a number of insights into efficient control of complex biological systems. Check out the preprint: [Acquiring musculoskeletal skills with curriculum-based reinforcement learning](https://www.biorxiv.org/content/early/2024/01/25/2024.01.24.577123).
+
 
 Our team comprised:
 - Alberto Chiappa and Alexander Mathis EPFL, Switzerland
@@ -18,11 +19,11 @@ Run `python src/main_baoding.py` to start a training. Note that this starts trai
 
 To evaluate the best single policy network (see the [summary](docs/summary.md)), run `python src/main_eval.py`. To evaluate the final ensemble (55% score), run `python src/eval_mixture_of_ensembles.py`.
 
-## Further context and literature
-
-If you want to read more about the challenge and our solution, check out this exciting article in the [Proceedings of Machine Learning Research](https://proceedings.mlr.press/v220/caggiano22a.html)! 
+## Literature
 
 If you use our code, or ideas please cite:
+
+### MyoChallenge 2022: Learning contact-rich manipulation using a musculoskeletal hand, PMLR
 
 ```
 @InProceedings{pmlr-v220-caggiano22a,
@@ -42,3 +43,19 @@ If you use our code, or ideas please cite:
 }
 ```
 
+### Acquiring musculoskeletal skills with curriculum-based reinforcement learning, bioRxiv
+
+```
+@article {Chiappa2024skills,
+	author = {Alberto Silvio Chiappa and Pablo Tano and Nisheet Patel and Abigail Ingster and Alexandre Pouget and Alexander Mathis},
+	title = {Acquiring musculoskeletal skills with curriculum-based reinforcement learning},
+	elocation-id = {2024.01.24.577123},
+	year = {2024},
+	doi = {10.1101/2024.01.24.577123},
+	publisher = {Cold Spring Harbor Laboratory},
+	abstract = {Efficient, physiologically-detailed musculoskeletal simulators and powerful learning algorithms provide new computational tools to tackle the grand challenge of understanding biological motor control. Our winning solution for the first NeurIPS MyoChallenge leverages an approach mirroring human learning and showcases reinforcement and curriculum learning as mechanisms to find motor control policies in complex object manipulation tasks. Analyzing the policy against data from human subjects reveals insights into efficient control of complex biological systems. Overall, our work highlights the new possibilities emerging at the interface of musculoskeletal physics engines, reinforcement learning and neuroscience.Competing Interest StatementThe authors have declared no competing interest.},
+	URL = {https://www.biorxiv.org/content/early/2024/01/25/2024.01.24.577123},
+	eprint = {https://www.biorxiv.org/content/early/2024/01/25/2024.01.24.577123.full.pdf},
+	journal = {bioRxiv}
+}
+```
