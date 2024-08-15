@@ -20,7 +20,7 @@ from src.metrics.sb_callbacks import EnvDumpCallback
 env_name = "CustomMyoBaodingBallsP2"
 
 # saving criteria
-saving_criteria = "dense_rewards" #score
+saving_criteria = "dense_rewards"  # score
 
 # whether this is the first task of the curriculum (True) or it is loading a previous task (False)
 FIRST_TASK = False
@@ -49,24 +49,35 @@ config = {
     },
     "enable_rsi": False,
     "rsi_probability": 0,
-    'balls_overlap': False,
+    "balls_overlap": False,
     "overlap_probability": 0,
-    "limit_init_angle": np.pi/20.0,
-    "goal_time_period": [4.5, 5.5],   # phase 2: (4, 6)
+    "limit_init_angle": np.pi / 20.0,
+    "goal_time_period": [4.5, 5.5],  # phase 2: (4, 6)
     "goal_xrange": (0.023, 0.027),  # phase 2: (0.020, 0.030)
     "goal_yrange": (0.025, 0.030),  # phase 2: (0.022, 0.032)
     # Randomization in physical properties of the baoding balls
-    'obj_size_range': (0.022, 0.022),    #(0.018, 0.024   # Object size range. Nominal 0.022
-    'obj_mass_range': (0.043, 0.043),    #(0.030, 0.300)   # Object weight range. Nominal 43 gms
-    'obj_friction_change': (0.0, 0.00, 0.0000), # (0.2, 0.001, 0.00002) nominal: 1.0, 0.005, 0.0001
-    'task_choice': 'random'
+    "obj_size_range": (
+        0.022,
+        0.022,
+    ),  # (0.018, 0.024   # Object size range. Nominal 0.022
+    "obj_mass_range": (
+        0.043,
+        0.043,
+    ),  # (0.030, 0.300)   # Object weight range. Nominal 43 gms
+    "obj_friction_change": (
+        0.0,
+        0.00,
+        0.0000,
+    ),  # (0.2, 0.001, 0.00002) nominal: 1.0, 0.005, 0.0001
+    "task_choice": "random",
 }
+
 
 # Function that creates and monitors vectorized environments:
 def make_parallel_envs(env_name, env_config, num_env, start_index=0):
     def make_env(rank):
         def _thunk():
-            env = EnvironmentFactory.register(env_name, **env_config)
+            env = EnvironmentFactory.create(env_name, **env_config)
             env = Monitor(env, TENSORBOARD_LOG)
             return env
 
@@ -90,49 +101,58 @@ if __name__ == "__main__":
     else:
         envs = VecNormalize.load(PATH_TO_NORMALIZED_ENV, envs)
 
-
     # Callbacks for score and for effort
 
     config_score, config_effort = copy.deepcopy(config), copy.deepcopy(config)
 
-    config_score['weighted_reward_keys'].update({
-        'pos_dist_1': 0,
-        'pos_dist_2': 0,
-        'act_reg': 0,
-        'solved': 5,
-        'alive':0,
-        'done': 0,
-        'sparse': 0})
+    config_score["weighted_reward_keys"].update(
+        {
+            "pos_dist_1": 0,
+            "pos_dist_2": 0,
+            "act_reg": 0,
+            "solved": 5,
+            "alive": 0,
+            "done": 0,
+            "sparse": 0,
+        }
+    )
 
-    config_effort['weighted_reward_keys'].update({
-        'pos_dist_1': 0,
-        'pos_dist_2': 0,
-        'act_reg': 1,
-        'solved': 0,
-        'alive':0,
-        'done': 0,
-        'sparse': 0})
+    config_effort["weighted_reward_keys"].update(
+        {
+            "pos_dist_1": 0,
+            "pos_dist_2": 0,
+            "act_reg": 1,
+            "solved": 0,
+            "alive": 0,
+            "done": 0,
+            "sparse": 0,
+        }
+    )
 
-    env_score = EnvironmentFactory.register(env_name, **config_score)
-    env_effort = EnvironmentFactory.register(env_name, **config_effort)
+    env_score = EnvironmentFactory.create(env_name, **config_score)
+    env_effort = EnvironmentFactory.create(env_name, **config_effort)
 
-    score_callback = EvaluateLSTM(eval_freq = 5000, eval_env = env_score, name = 'eval/score', num_episodes=10)
-    effort_callback = EvaluateLSTM(eval_freq = 5000, eval_env = env_effort, name = 'eval/effort', num_episodes=10)
+    score_callback = EvaluateLSTM(
+        eval_freq=5000, eval_env=env_score, name="eval/score", num_episodes=10
+    )
+    effort_callback = EvaluateLSTM(
+        eval_freq=5000, eval_env=env_effort, name="eval/effort", num_episodes=10
+    )
 
     # Evaluation Callback
 
     # Create vectorized environments:
-    if saving_criteria=="score":
+    if saving_criteria == "score":
         eval_envs = make_parallel_envs(env_name, config_score, num_env=16)
-    elif saving_criteria=="dense_rewards":
+    elif saving_criteria == "dense_rewards":
         eval_envs = make_parallel_envs(env_name, config, num_env=16)
     else:
-        raise ValueError('Unrecognized saving criteria')
+        raise ValueError("Unrecognized saving criteria")
 
     if FIRST_TASK:
         eval_envs = VecNormalize(eval_envs)
     else:
-        eval_envs = VecNormalize.load(PATH_TO_NORMALIZED_ENV, eval_envs) 
+        eval_envs = VecNormalize.load(PATH_TO_NORMALIZED_ENV, eval_envs)
 
     env_dump_callback = EnvDumpCallback(TENSORBOARD_LOG, verbose=0)
 
@@ -159,7 +179,7 @@ if __name__ == "__main__":
             gamma=0.99,
             gae_lambda=0.9,
             n_epochs=10,
-            ent_coef= 3e-6,
+            ent_coef=3e-6,
             learning_rate=2e-5,
             clip_range=0.25,
             use_sde=True,
@@ -175,16 +195,21 @@ if __name__ == "__main__":
             ),
         )
     else:
-        custom_objects = {      # need to define this since my python version is newer
-        "learning_rate": lambda f:3e-4 * f,
+        custom_objects = {  # need to define this since my python version is newer
+            "learning_rate": lambda f: 3e-4 * f,
         }
         model = RecurrentPPO.load(
-            PATH_TO_PRETRAINED_NET, env=envs, tensorboard_log=TENSORBOARD_LOG, device='cuda'
+            PATH_TO_PRETRAINED_NET,
+            env=envs,
+            tensorboard_log=TENSORBOARD_LOG,
+            device="cuda",
         )
 
     # Train and save model
     model.learn(
-        total_timesteps=10_000_000, callback=[eval_callback,score_callback,effort_callback], reset_num_timesteps=True
+        total_timesteps=10_000_000,
+        callback=[eval_callback, score_callback, effort_callback],
+        reset_num_timesteps=True,
     )
 
     model.save(os.path.join(TENSORBOARD_LOG, "final_model.pkl"))

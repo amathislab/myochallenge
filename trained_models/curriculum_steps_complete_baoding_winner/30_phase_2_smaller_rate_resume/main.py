@@ -7,7 +7,7 @@ from datetime import datetime
 import numpy as np
 import torch.nn as nn
 from sb3_contrib import RecurrentPPO
-from stable_baselines3.common.callbacks import EvalCallback, CheckpointCallback
+from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import VecNormalize
 from stable_baselines3.common.vec_env.subproc_vec_env import SubprocVecEnv
@@ -35,7 +35,10 @@ PATH_TO_NORMALIZED_ENV = "output/training/2022-11-01/17-02-41_nisheet_36_new_hp_
 PATH_TO_PRETRAINED_NET = "output/training/2022-11-01/17-02-41_nisheet_36_new_hp_pos_dist_10/rl_model_960000_steps.zip"  # "trained_models/best_model.zip"
 
 # Tensorboard log (will save best model during evaluation)
-now = datetime.now().strftime("%Y-%m-%d/%H-%M-%S") + "_nisheet_36_new_hp_pos_dist_10_alive_1_solved_5"
+now = (
+    datetime.now().strftime("%Y-%m-%d/%H-%M-%S")
+    + "_nisheet_36_new_hp_pos_dist_10_alive_1_solved_5"
+)
 TENSORBOARD_LOG = os.path.join("output", "training", now)
 
 
@@ -77,13 +80,14 @@ config = {
     "task_choice": "random",
 }
 
+
 # Function that creates and monitors vectorized environments:
 def make_parallel_envs(
     env_name, env_config, num_env, start_index=0
 ):  # pylint: disable=redefined-outer-name
     def make_env(_):
         def _thunk():
-            env = EnvironmentFactory.register(env_name, **env_config)
+            env = EnvironmentFactory.create(env_name, **env_config)
             env = Monitor(env, TENSORBOARD_LOG)
             return env
 
@@ -165,9 +169,9 @@ if __name__ == "__main__":
     # Evaluation Callback
 
     # Create vectorized environments:
-    if saving_criteria=="score":
+    if saving_criteria == "score":
         eval_envs = make_parallel_envs(env_name, config_score, num_env=1)
-    elif saving_criteria=="dense_rewards":
+    elif saving_criteria == "dense_rewards":
         eval_envs = make_parallel_envs(env_name, config, num_env=1)
     else:
         raise ValueError("Unrecognized saving criteria")
@@ -235,7 +239,7 @@ if __name__ == "__main__":
             env=envs,
             tensorboard_log=TENSORBOARD_LOG,
             device="cuda",
-            custom_objects=custom_objects
+            custom_objects=custom_objects,
         )
 
     # Train and save model

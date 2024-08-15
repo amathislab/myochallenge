@@ -75,14 +75,15 @@ config = {
 
 
 config_hold = copy.deepcopy(config)
-config_hold.update({
-    "goal_time_period": [1e100, 1e100],
-
-    "base_model_path": PATH_TO_BASE_NET,
-    "base_env_path": PATH_TO_NORMALIZED_BASE_ENV,
-    "base_env_name": "CustomMyoBaodingBallsP2",
-    "base_env_config": config,
-})
+config_hold.update(
+    {
+        "goal_time_period": [1e100, 1e100],
+        "base_model_path": PATH_TO_BASE_NET,
+        "base_env_path": PATH_TO_NORMALIZED_BASE_ENV,
+        "base_env_name": "CustomMyoBaodingBallsP2",
+        "base_env_config": config,
+    }
+)
 
 
 # Function that creates and monitors vectorized environments
@@ -91,7 +92,7 @@ def make_parallel_envs(
 ):  # pylint: disable=redefined-outer-name
     def make_env(_):
         def _thunk():
-            env = EnvironmentFactory.register(env_name, **env_config)
+            env = EnvironmentFactory.create(env_name, **env_config)
             env = Monitor(env, TENSORBOARD_LOG)
             return env
 
@@ -104,7 +105,7 @@ if __name__ == "__main__":
     env_name = "MixtureModelBaodingEnv"
 
     os.makedirs(TENSORBOARD_LOG, exist_ok=True)
-    with open(      # pylint: disable=unspecified-encoding
+    with open(  # pylint: disable=unspecified-encoding
         os.path.join(TENSORBOARD_LOG, "config.json"), "w"
     ) as file:
         json.dump(config_hold, file)
@@ -157,8 +158,8 @@ if __name__ == "__main__":
         }
     )
 
-    env_score = EnvironmentFactory.register(env_name, **config_score)
-    env_effort = EnvironmentFactory.register(env_name, **config_effort)
+    env_score = EnvironmentFactory.create(env_name, **config_score)
+    env_effort = EnvironmentFactory.create(env_name, **config_effort)
 
     score_callback = EvaluateLSTM(
         eval_freq=1_200_000, eval_env=env_score, name="eval/score", num_episodes=20
@@ -170,13 +171,12 @@ if __name__ == "__main__":
     # Evaluation Callback
 
     # Create vectorized environments:
-    if saving_criteria=="score":
+    if saving_criteria == "score":
         eval_envs = make_parallel_envs(env_name, config_score, num_env=1)
-    elif saving_criteria=="dense_rewards":
+    elif saving_criteria == "dense_rewards":
         eval_envs = make_parallel_envs(env_name, config_hold, num_env=1)
     else:
         raise ValueError("Unrecognized saving criteria")
-
 
     eval_envs = VecNormalize.load(PATH_TO_NORMALIZED_HOLD_ENV, eval_envs)
     env_dump_callback = EnvDumpCallback(TENSORBOARD_LOG, verbose=0)
@@ -212,13 +212,17 @@ if __name__ == "__main__":
         env=envs,
         tensorboard_log=TENSORBOARD_LOG,
         device="cuda:0",
-        custom_objects=custom_objects
+        custom_objects=custom_objects,
     )
 
     # Train and save model
     model.learn(
         total_timesteps=20_000_000,
-        callback=[eval_callback, score_callback, checkpoint_callback], # effort_callback],
+        callback=[
+            eval_callback,
+            score_callback,
+            checkpoint_callback,
+        ],  # effort_callback],
         reset_num_timesteps=True,
     )
 

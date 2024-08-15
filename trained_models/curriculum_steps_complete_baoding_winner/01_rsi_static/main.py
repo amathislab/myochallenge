@@ -7,7 +7,7 @@ from datetime import datetime
 import numpy as np
 import torch.nn as nn
 from sb3_contrib import RecurrentPPO
-from stable_baselines3.common.callbacks import EvalCallback, CheckpointCallback
+from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import VecNormalize
 from stable_baselines3.common.vec_env.subproc_vec_env import SubprocVecEnv
@@ -46,7 +46,7 @@ config = {
         "sparse": 0,
     },
     "enable_rsi": True,
-    "goal_time_period": [1e100, 1e100],   # phase 2: (4, 6)
+    "goal_time_period": [1e100, 1e100],  # phase 2: (4, 6)
     "goal_xrange": (0.025, 0.025),  # phase 2: (0.020, 0.030)
     "goal_yrange": (0.028, 0.028),  # phase 2: (0.022, 0.032)"
 }
@@ -56,7 +56,7 @@ config = {
 def make_parallel_envs(env_name, env_config, num_env, start_index=0):
     def make_env(rank):
         def _thunk():
-            env = EnvironmentFactory.register(env_name, **env_config)
+            env = EnvironmentFactory.create(env_name, **env_config)
             env = Monitor(env, TENSORBOARD_LOG)
             return env
 
@@ -80,9 +80,7 @@ if __name__ == "__main__":
     else:
         envs = VecNormalize.load(PATH_TO_NORMALIZED_ENV, envs)
 
-
     # Callbacks for score and for effort
-
 
     config_score = {
         "weighted_reward_keys": {
@@ -95,7 +93,7 @@ if __name__ == "__main__":
             "sparse": 0,
         },
         "enable_rsi": True,
-        "goal_time_period": [1e100, 1e100],   # phase 2: (4, 6)
+        "goal_time_period": [1e100, 1e100],  # phase 2: (4, 6)
         "goal_xrange": (0.025, 0.025),  # phase 2: (0.020, 0.030)
         "goal_yrange": (0.028, 0.028),  # phase 2: (0.022, 0.032)
     }
@@ -112,39 +110,51 @@ if __name__ == "__main__":
         },
         "enable_rsi": False,
         "rsi_probability": 0,
-        'balls_overlap': False,
+        "balls_overlap": False,
         "overlap_probability": 0,
         "limit_init_angle": np.pi,
-        "goal_time_period": [4, 6],   # phase 2: (4, 6)
+        "goal_time_period": [4, 6],  # phase 2: (4, 6)
         "goal_xrange": (0.020, 0.030),  # phase 2: (0.020, 0.030)
         "goal_yrange": (0.022, 0.032),  # phase 2: (0.022, 0.032)
         # Randomization in physical properties of the baoding balls
-        'obj_size_range': (0.018, 0.024),    #(0.018, 0.024)   # Object size range. Nominal 0.022
-        'obj_mass_range': (0.030, 0.300),    #(0.030, 0.300)   # Object weight range. Nominal 43 gms
-        'obj_friction_change': (0.2, 0.001, 0.00002), # (0.2, 0.001, 0.00002) nominal: 1.0, 0.005, 0.0001
-        'task_choice': 'random'
+        "obj_size_range": (
+            0.018,
+            0.024,
+        ),  # (0.018, 0.024)   # Object size range. Nominal 0.022
+        "obj_mass_range": (
+            0.030,
+            0.300,
+        ),  # (0.030, 0.300)   # Object weight range. Nominal 43 gms
+        "obj_friction_change": (
+            0.2,
+            0.001,
+            0.00002,
+        ),  # (0.2, 0.001, 0.00002) nominal: 1.0, 0.005, 0.0001
+        "task_choice": "random",
     }
 
-    env_score = EnvironmentFactory.register(env_name, **config_score)
+    env_score = EnvironmentFactory.create(env_name, **config_score)
     # env_effort = EnvironmentFactory.register(env_name, **config_effort)
 
-    score_callback = EvaluateLSTM(eval_freq = 500000, eval_env = env_score, name = 'eval/score', num_episodes=10)
+    score_callback = EvaluateLSTM(
+        eval_freq=500000, eval_env=env_score, name="eval/score", num_episodes=10
+    )
     # effort_callback = EvaluateLSTM(eval_freq = 100000, eval_env = env_effort, name = 'eval/effort', num_episodes=10)
 
     # Evaluation Callback
 
     # Create vectorized environments:
-    if saving_criteria=="score":
+    if saving_criteria == "score":
         eval_envs = make_parallel_envs(env_name, config_score, num_env=16)
-    elif saving_criteria=="dense_rewards":
+    elif saving_criteria == "dense_rewards":
         eval_envs = make_parallel_envs(env_name, config, num_env=16)
     else:
-        raise ValueError('Unrecognized saving criteria')
+        raise ValueError("Unrecognized saving criteria")
 
     if FIRST_TASK:
         eval_envs = VecNormalize(eval_envs)
     else:
-        eval_envs = VecNormalize.load(PATH_TO_NORMALIZED_ENV, eval_envs) 
+        eval_envs = VecNormalize.load(PATH_TO_NORMALIZED_ENV, eval_envs)
 
     env_dump_callback = EnvDumpCallback(TENSORBOARD_LOG, verbose=0)
 
@@ -168,44 +178,46 @@ if __name__ == "__main__":
         model = RecurrentPPO(
             "MlpLstmPolicy",
             envs,
-            device='cuda',
+            device="cuda",
             verbose=2,
             tensorboard_log=TENSORBOARD_LOG,
             batch_size=32,
             n_steps=128,
-            learning_rate= 2.55673e-05,
-            ent_coef = 3.62109e-06,
-            clip_range= 0.3,
+            learning_rate=2.55673e-05,
+            ent_coef=3.62109e-06,
+            clip_range=0.3,
             gamma=0.99,
             gae_lambda=0.9,
-            max_grad_norm = 0.7,
-            vf_coef = 0.835671,
+            max_grad_norm=0.7,
+            vf_coef=0.835671,
             n_epochs=10,
             policy_kwargs=dict(
                 ortho_init=False,
                 log_std_init=-2,
                 activation_fn=nn.ReLU,
                 net_arch=[dict(pi=[256, 256], vf=[256, 256])],
-            ), 
+            ),
         )
     else:
-        custom_objects = {      # need to define this since my python version is newer
-        "lr_schedule": lambda _: 1.5e-04,
-        "learning_rate": lambda _: 1.5e-04,
-        "clip_range": 0.2,
-        "n_steps": 4096,
-        "batch_size": 4096,
-        "ent_coef": 0.00025,
+        custom_objects = {  # need to define this since my python version is newer
+            "lr_schedule": lambda _: 1.5e-04,
+            "learning_rate": lambda _: 1.5e-04,
+            "clip_range": 0.2,
+            "n_steps": 4096,
+            "batch_size": 4096,
+            "ent_coef": 0.00025,
         }
         model = RecurrentPPO.load(
-            'trained_models/rsi_static_perfect.zip',
+            "trained_models/rsi_static_perfect.zip",
             env=envs,
-            device='cuda',
+            device="cuda",
         )
 
     # Train and save model
     model.learn(
-        total_timesteps=10_000_000, callback=[checkpoint_callback,eval_callback], reset_num_timesteps=True
+        total_timesteps=10_000_000,
+        callback=[checkpoint_callback, eval_callback],
+        reset_num_timesteps=True,
     )
 
     model.save(os.path.join(TENSORBOARD_LOG, "final_model.pkl"))

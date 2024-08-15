@@ -1,7 +1,8 @@
 # pylint: disable=no-member
-import pickle
 import os
+import pickle
 import warnings
+
 import numpy as np
 import torch
 from myosuite.envs.myo.myochallenge.baoding_v1 import BaodingEnvV1
@@ -9,10 +10,10 @@ from sb3_contrib import RecurrentPPO
 from sklearn.metrics import classification_report, confusion_matrix
 from stable_baselines3.common.vec_env import VecNormalize
 from stable_baselines3.common.vec_env.dummy_vec_env import DummyVecEnv
+
+from definitions import ROOT_DIR
 from envs.environment_factory import EnvironmentFactory
 from models.classifier import TaskClassifier
-from definitions import ROOT_DIR
-
 
 warnings.filterwarnings("ignore")
 
@@ -84,7 +85,7 @@ def load_normalized_envs(task: str):
         envs.append(
             VecNormalize.load(
                 path,
-                DummyVecEnv([lambda: EnvironmentFactory.register(env_name, **config)]),
+                DummyVecEnv([lambda: EnvironmentFactory.create(env_name, **config)]),
             )
         )
 
@@ -144,12 +145,22 @@ class SuperModel:
     def load_classifier(self):
         classifier = TaskClassifier(N_OBS_PER_TRIAL)
         classifier.load_state_dict(
-            torch.load(os.path.join(ROOT_DIR, "trained_models/winning_ensemble/classifier/classifier.pt"), map_location=torch.device('cpu'))
+            torch.load(
+                os.path.join(
+                    ROOT_DIR, "trained_models/winning_ensemble/classifier/classifier.pt"
+                ),
+                map_location=torch.device("cpu"),
+            )
         )
         return classifier
 
     def load_data_scaler(self):
-        with open(os.path.join(ROOT_DIR, "trained_models/winning_ensemble/classifier/scaler.pkl"), "rb") as f:
+        with open(
+            os.path.join(
+                ROOT_DIR, "trained_models/winning_ensemble/classifier/scaler.pkl"
+            ),
+            "rb",
+        ) as f:
             scaler = pickle.load(f)
         return scaler
 
@@ -337,7 +348,7 @@ def eval_perf(eval_env: BaodingEnvV1, mixture_model: SuperModel):
 def main() -> None:
 
     model = SuperModel()
-    eval_env = EnvironmentFactory.register(env_name, **config)
+    eval_env = EnvironmentFactory.create(env_name, **config)
 
     print(
         "\n\nEvaluating performance of the supermodel with classifier on random task...\n"

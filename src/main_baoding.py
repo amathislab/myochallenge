@@ -18,9 +18,9 @@ ENV_NAME = "CustomMyoBaodingBallsP2"
 now = datetime.now().strftime("%Y-%m-%d/%H-%M-%S")
 TENSORBOARD_LOG = os.path.join(ROOT_DIR, "output", "training", now)
 
-load_folder = "trained_models/baoding_phase2/alberto_518/"
-PATH_TO_NORMALIZED_ENV = load_folder + "training_env.pkl"
-PATH_TO_PRETRAINED_NET = load_folder + "best_model.zip"
+load_folder = "trained_models/curriculum_steps_complete_baoding_winner/01_rsi_static/"
+PATH_TO_NORMALIZED_ENV = load_folder + "env.pkl"
+PATH_TO_PRETRAINED_NET = load_folder + "model.zip"
 
 # Reward structure and task parameters:
 config = {
@@ -51,11 +51,12 @@ config = {
     "obj_friction_change": (0.2, 0.001, 0.00002),
 }
 
+
 # Function that creates and monitors vectorized environments:
 def make_parallel_envs(env_config, num_env, start_index=0):
     def make_env(_):
         def _thunk():
-            env = EnvironmentFactory.register(ENV_NAME, **env_config)
+            env = EnvironmentFactory.create(ENV_NAME, **env_config)
             env = Monitor(env, TENSORBOARD_LOG)
             return env
 

@@ -45,7 +45,7 @@ def get_config() -> dict:
 
 
 def load_normalized_envs(env_path: str, config: dict) -> VecNormalize:
-    env = EnvironmentFactory.register("CustomMyoBaodingBallsP2", **config)
+    env = EnvironmentFactory.create("CustomMyoBaodingBallsP2", **config)
     envs = DummyVecEnv([lambda: env] * 16)
 
     return VecNormalize.load(env_path, envs)
@@ -124,7 +124,7 @@ class DataCollector:
 def collect_data_for_classifier(
     model_path: str, env_path: str, save_path: str, n_episodes: int = 10_000
 ) -> None:
-    env = EnvironmentFactory.register("CustomMyoBaodingBallsP2", **get_config())
+    env = EnvironmentFactory.create("CustomMyoBaodingBallsP2", **get_config())
 
     print("\n\nCollecting data\n")
     start = time.time()

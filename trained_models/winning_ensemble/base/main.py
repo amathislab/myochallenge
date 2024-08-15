@@ -7,7 +7,7 @@ from datetime import datetime
 import numpy as np
 import torch.nn as nn
 from sb3_contrib import RecurrentPPO
-from stable_baselines3.common.callbacks import EvalCallback, CheckpointCallback
+from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import VecNormalize
 from stable_baselines3.common.vec_env.subproc_vec_env import SubprocVecEnv
@@ -80,13 +80,14 @@ config = {
     "task_choice": "random",
 }
 
+
 # Function that creates and monitors vectorized environments:
 def make_parallel_envs(
     env_name, env_config, num_env, start_index=0
 ):  # pylint: disable=redefined-outer-name
     def make_env(_):
         def _thunk():
-            env = EnvironmentFactory.register(env_name, **env_config)
+            env = EnvironmentFactory.create(env_name, **env_config)
             env = Monitor(env, TENSORBOARD_LOG)
             return env
 

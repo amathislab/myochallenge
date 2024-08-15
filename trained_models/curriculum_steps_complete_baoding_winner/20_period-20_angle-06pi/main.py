@@ -49,17 +49,27 @@ config = {
     },
     "enable_rsi": False,
     "rsi_probability": 0,
-    'balls_overlap': False,
+    "balls_overlap": False,
     "overlap_probability": 0,
     "limit_init_angle": np.pi * 0.6,
-    "goal_time_period": [20, 20],   # phase 2: (4, 6)
+    "goal_time_period": [20, 20],  # phase 2: (4, 6)
     "goal_xrange": (0.023, 0.027),  # phase 2: (0.020, 0.030)
     "goal_yrange": (0.025, 0.030),  # phase 2: (0.022, 0.032)
     # Randomization in physical properties of the baoding balls
-    'obj_size_range': (0.022, 0.022),    #(0.018, 0.024   # Object size range. Nominal 0.022
-    'obj_mass_range': (0.043, 0.043),    #(0.030, 0.300)   # Object weight range. Nominal 43 gms
-    'obj_friction_change': (0.0, 0.00, 0.0000), # (0.2, 0.001, 0.00002) nominal: 1.0, 0.005, 0.0001
-    'task_choice': 'random'
+    "obj_size_range": (
+        0.022,
+        0.022,
+    ),  # (0.018, 0.024   # Object size range. Nominal 0.022
+    "obj_mass_range": (
+        0.043,
+        0.043,
+    ),  # (0.030, 0.300)   # Object weight range. Nominal 43 gms
+    "obj_friction_change": (
+        0.0,
+        0.00,
+        0.0000,
+    ),  # (0.2, 0.001, 0.00002) nominal: 1.0, 0.005, 0.0001
+    "task_choice": "random",
 }
 
 
@@ -67,7 +77,7 @@ config = {
 def make_parallel_envs(env_name, env_config, num_env, start_index=0):
     def make_env(rank):
         def _thunk():
-            env = EnvironmentFactory.register(env_name, **env_config)
+            env = EnvironmentFactory.create(env_name, **env_config)
             env = Monitor(env, TENSORBOARD_LOG)
             return env
 
@@ -119,8 +129,8 @@ if __name__ == "__main__":
         }
     )
 
-    env_score = EnvironmentFactory.register(env_name, **config_score)
-    env_effort = EnvironmentFactory.register(env_name, **config_effort)
+    env_score = EnvironmentFactory.create(env_name, **config_score)
+    env_effort = EnvironmentFactory.create(env_name, **config_effort)
 
     score_callback = EvaluateLSTM(
         eval_freq=20000, eval_env=env_score, name="eval/score", num_episodes=10

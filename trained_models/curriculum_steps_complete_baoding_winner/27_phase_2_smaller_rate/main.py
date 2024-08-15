@@ -8,7 +8,7 @@ from datetime import datetime
 import numpy as np
 import torch.nn as nn
 from sb3_contrib import RecurrentPPO
-from stable_baselines3.common.callbacks import EvalCallback, CheckpointCallback
+from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import VecNormalize
 from stable_baselines3.common.vec_env.subproc_vec_env import SubprocVecEnv
@@ -72,11 +72,12 @@ config = {
     "task_choice": "random",
 }
 
+
 # Function that creates and monitors vectorized environments:
 def make_parallel_envs(env_name, env_config, num_env, start_index=0):
     def make_env(rank):
         def _thunk():
-            env = EnvironmentFactory.register(env_name, **env_config)
+            env = EnvironmentFactory.create(env_name, **env_config)
             env = Monitor(env, TENSORBOARD_LOG)
             return env
 
@@ -128,8 +129,8 @@ if __name__ == "__main__":
         }
     )
 
-    env_score = EnvironmentFactory.register(env_name, **config_score)
-    env_effort = EnvironmentFactory.register(env_name, **config_effort)
+    env_score = EnvironmentFactory.create(env_name, **config_score)
+    env_effort = EnvironmentFactory.create(env_name, **config_effort)
 
     score_callback = EvaluateLSTM(
         eval_freq=5000, eval_env=env_score, name="eval/score", num_episodes=20
@@ -204,14 +205,14 @@ if __name__ == "__main__":
             "n_steps": 4096,
             "batch_size": 4096,
             "ent_coef": 0.00025,
-            "last_lstm_states": None
+            "last_lstm_states": None,
         }
         model = RecurrentPPO.load(
             PATH_TO_PRETRAINED_NET,
             env=envs,
             tensorboard_log=TENSORBOARD_LOG,
             device="cuda",
-            custom_objects=custom_objects
+            custom_objects=custom_objects,
         )
 
     # Train and save model

@@ -23,10 +23,14 @@ env_name = "CustomMyoBaodingBallsP1"
 FIRST_TASK = False
 
 # Path to normalized Vectorized environment (if not first task)
-PATH_TO_NORMALIZED_ENV = "output/training/2022-10-13/08-51-42_random_25_25_rsi/training_env.pkl"
+PATH_TO_NORMALIZED_ENV = (
+    "output/training/2022-10-13/08-51-42_random_25_25_rsi/training_env.pkl"
+)
 
 # Path to pretrained network (if not first task)
-PATH_TO_PRETRAINED_NET = "output/training/2022-10-13/08-51-42_random_25_25_rsi/best_model.zip"
+PATH_TO_PRETRAINED_NET = (
+    "output/training/2022-10-13/08-51-42_random_25_25_rsi/best_model.zip"
+)
 
 # Tensorboard log (will save best model during evaluation)
 now = datetime.now().strftime("%Y-%m-%d/%H-%M-%S") + "_random_20_20_rsi_prob_0_9"
@@ -50,17 +54,18 @@ config = {
     "noise_palm": 0,
     "noise_fingers": 0,
     "noise_balls": 0,
-    "goal_time_period": [20, 20],   # phase 2: (4, 6)
+    "goal_time_period": [20, 20],  # phase 2: (4, 6)
     "goal_xrange": (0.025, 0.025),  # phase 2: (0.020, 0.030)
     "goal_yrange": (0.028, 0.028),  # phase 2: (0.022, 0.032)
     "drop_th": 1.3,
 }
 
+
 # Function that creates and monitors vectorized environments:
 def make_parallel_envs(env_name, env_config, num_env, start_index=0):
     def make_env(rank):
         def _thunk():
-            env = EnvironmentFactory.register(env_name, **env_config)
+            env = EnvironmentFactory.create(env_name, **env_config)
             env = Monitor(env, TENSORBOARD_LOG)
             return env
 
@@ -102,29 +107,39 @@ if __name__ == "__main__":
 
     config_score, config_effort = copy.deepcopy(config), copy.deepcopy(config)
 
-    config_score['weighted_reward_keys'].update({
-        'pos_dist_1': 0,
-        'pos_dist_2': 0,
-        'act_reg': 0,
-        'solved': 5,
-        'alive':0,
-        'done': 0,
-        'sparse': 0})
+    config_score["weighted_reward_keys"].update(
+        {
+            "pos_dist_1": 0,
+            "pos_dist_2": 0,
+            "act_reg": 0,
+            "solved": 5,
+            "alive": 0,
+            "done": 0,
+            "sparse": 0,
+        }
+    )
 
-    config_effort['weighted_reward_keys'].update({
-        'pos_dist_1': 0,
-        'pos_dist_2': 0,
-        'act_reg': 1,
-        'solved': 0,
-        'alive':0,
-        'done': 0,
-        'sparse': 0})
+    config_effort["weighted_reward_keys"].update(
+        {
+            "pos_dist_1": 0,
+            "pos_dist_2": 0,
+            "act_reg": 1,
+            "solved": 0,
+            "alive": 0,
+            "done": 0,
+            "sparse": 0,
+        }
+    )
 
-    env_score = EnvironmentFactory.register(env_name, **config_score)
-    env_effort = EnvironmentFactory.register(env_name, **config_effort)
+    env_score = EnvironmentFactory.create(env_name, **config_score)
+    env_effort = EnvironmentFactory.create(env_name, **config_effort)
 
-    score_callback = EvaluateLSTM(eval_freq = 5000, eval_env = env_score, name = 'eval/score', num_episodes=10)
-    effort_callback = EvaluateLSTM(eval_freq = 5000, eval_env = env_effort, name = 'eval/effort', num_episodes=10)
+    score_callback = EvaluateLSTM(
+        eval_freq=5000, eval_env=env_score, name="eval/score", num_episodes=10
+    )
+    effort_callback = EvaluateLSTM(
+        eval_freq=5000, eval_env=env_effort, name="eval/effort", num_episodes=10
+    )
 
     # Create model (hyperparameters from RL Zoo HalfCheetak)
     if FIRST_TASK:
@@ -138,7 +153,7 @@ if __name__ == "__main__":
             gamma=0.99,
             gae_lambda=0.9,
             n_epochs=10,
-            ent_coef= 3e-6,
+            ent_coef=3e-6,
             learning_rate=2e-5,
             clip_range=0.25,
             use_sde=True,
@@ -160,7 +175,9 @@ if __name__ == "__main__":
 
     # Train and save model
     model.learn(
-        total_timesteps=10_000_000, callback=[eval_callback,score_callback,effort_callback], reset_num_timesteps=True
+        total_timesteps=10_000_000,
+        callback=[eval_callback, score_callback, effort_callback],
+        reset_num_timesteps=True,
     )
 
     model.save(os.path.join(TENSORBOARD_LOG, "final_model.pkl"))
