@@ -1,9 +1,11 @@
-# MyoChallenge 2022
+# MyoChallenge 2022 (winning code)
 
-This is the code repository for winning the Boading ball task of the [MyoChallenge 2022](https://sites.google.com/view/myochallenge). Our team was named _stiff fingers_, and this name was inspired by the fact as the fingers were not too agile.... perhaps bending the fingers themselves is not too task relevant. If you want to read more about the challenge and our solution, check out this exciting article summarizing the challenge and winning solutions in the [Proceedings of Machine Learning Research](https://proceedings.mlr.press/v220/caggiano22a.html)! We also wrote a manuscript further detailing our solution, and analyzing the learned policy. Analyzing the policy against data from human subjects revealed a number of insights into efficient control of complex biological systems. Check out the preprint: [Acquiring musculoskeletal skills with curriculum-based reinforcement learning](https://www.biorxiv.org/content/early/2024/01/25/2024.01.24.577123).
+This is the code repository for winning the Boading ball task of the [MyoChallenge 2022](https://sites.google.com/view/myochallenge). Our team was named _stiff fingers_, and this name was inspired by the fact as the fingers were not too agile.... perhaps bending the fingers themselves is not too task relevant. If you want to read more about the challenge and our solution, check out this exciting article summarizing the challenge and winning solutions in the [Proceedings of Machine Learning Research](https://proceedings.mlr.press/v220/caggiano22a.html)! 
+
+We also wrote a manuscript further detailing our solution, and analyzing the learned policy. Analyzing the policy against data from human subjects revealed a number of insights into efficient control of complex biological systems. Check out the preprint: [Acquiring musculoskeletal skills with curriculum-based reinforcement learning](https://www.biorxiv.org/content/early/2024/01/25/2024.01.24.577123). You can find code for this analysis [here](https://github.com/amathislab/MyoChallengeAnalysis). The relevant data for models and rollouts is available on [zenodo](https://zenodo.org/records/13332869).
 
 
-Our team comprised:
+Our winning team comprised:
 - Alberto Chiappa and Alexander Mathis EPFL, Switzerland
 - Pablo Tano, Nisheet Patel, Alexandre Pouget University of Geneva, Switzerland
 
@@ -59,3 +61,5 @@ If you use our code, or ideas please cite:
 	journal = {bioRxiv}
 }
 ```
+
+Acknowledgments & funding: We thank members of the Mathis Group for helpful feedback. A.M. is appreciative to the Kavli Institute for Theoretical Physics (KITP) in Santa Barbara, where part of the manuscript was written. AM thanks Nicola Hodges and John Krakauer for discussions on skill learning. A.C. and A.M. are funded by Swiss SNF grant (310030_212516). A.I. acknowledges EPFL's Summer in the Lab fellowship to join the Mathis Group. A.M. was supported in part by grants NSF PHY-1748958 and PHY-2309135 to the KITP. P.T. and N.P. were supported by University of Geneva internal funding.
