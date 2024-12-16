@@ -48,17 +48,18 @@ If you use our code, or ideas please cite:
 ### Acquiring musculoskeletal skills with curriculum-based reinforcement learning, bioRxiv
 
 ```
-@article {Chiappa2024skills,
-	author = {Alberto Silvio Chiappa and Pablo Tano and Nisheet Patel and Abigail Ingster and Alexandre Pouget and Alexander Mathis},
+@article{chiappa2024acquiring,
 	title = {Acquiring musculoskeletal skills with curriculum-based reinforcement learning},
-	elocation-id = {2024.01.24.577123},
+	journal = {Neuron},
+	volume = {112},
+	number = {23},
+	pages = {3969-3983.e5},
 	year = {2024},
-	doi = {10.1101/2024.01.24.577123},
-	publisher = {Cold Spring Harbor Laboratory},
-	abstract = {Efficient, physiologically-detailed musculoskeletal simulators and powerful learning algorithms provide new computational tools to tackle the grand challenge of understanding biological motor control. Our winning solution for the first NeurIPS MyoChallenge leverages an approach mirroring human learning and showcases reinforcement and curriculum learning as mechanisms to find motor control policies in complex object manipulation tasks. Analyzing the policy against data from human subjects reveals insights into efficient control of complex biological systems. Overall, our work highlights the new possibilities emerging at the interface of musculoskeletal physics engines, reinforcement learning and neuroscience.Competing Interest StatementThe authors have declared no competing interest.},
-	URL = {https://www.biorxiv.org/content/early/2024/01/25/2024.01.24.577123},
-	eprint = {https://www.biorxiv.org/content/early/2024/01/25/2024.01.24.577123.full.pdf},
-	journal = {bioRxiv}
+	issn = {0896-6273},
+	doi = {https://doi.org/10.1016/j.neuron.2024.09.002},
+	url = {https://www.sciencedirect.com/science/article/pii/S0896627324006500},
+	author = {Alberto Silvio Chiappa and Pablo Tano and Nisheet Patel and Abigaïl Ingster and Alexandre Pouget and Alexander Mathis},
+	keywords = {motor control, motor learning, reinforcement learning, curriculum learning, motor skills, musculoskeletal control, muscle synergies},
 }
 ```
 
